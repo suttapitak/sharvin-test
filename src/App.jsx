@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logo from "./assets/logo.jpg";
 
 const API =
@@ -15,7 +15,8 @@ export default function App() {
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
+  const [timeLeft, setTimeLeft] = useState(0);   
+  
   const [errors, setErrors] = useState({
     studentName: "",
     school: "",
@@ -73,6 +74,10 @@ export default function App() {
     return isValid;
   }
 
+function getTestDurationByClass() {
+  return 30 * 60; // 30 minutes for all classes
+}
+
   async function startTest() {
     if (!validateForm()) return;
 
@@ -80,6 +85,7 @@ export default function App() {
     setScore(null);
     setAnswers({});
     setSubmitted(false);
+    setTimeLeft(getTestDurationByClass());
 
     try {
       const response = await fetch(`${API}?class=${selectedClass}`);
@@ -147,6 +153,32 @@ export default function App() {
     }
   }
 
+useEffect(() => {
+  if (!started || submitted) return;
+  if (timeLeft <= 0) return;
+
+  const timer = setInterval(() => {
+    setTimeLeft((prev) => {
+      if (prev <= 1) {
+        clearInterval(timer);
+
+        setTimeout(() => {
+          if (!submitted) {
+            submitTest();
+            alert("Time is over. Test submitted automatically.");
+          }
+        }, 0);
+
+        return 0;
+      }
+
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [started, submitted, timeLeft]);
+
   function resetTest() {
     setStudentName("");
     setSchool("");
@@ -158,6 +190,7 @@ export default function App() {
     setStarted(false);
     setLoading(false);
     setSubmitted(false);
+    setTimeLeft(0);
     setErrors({
       studentName: "",
       school: "",
@@ -166,6 +199,12 @@ export default function App() {
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+}
 
   const styles = {
     page: {
@@ -422,6 +461,20 @@ export default function App() {
 
         {started && (
           <>
+          <div
+  style={{
+    background: "#ffe9e9",
+    color: "#8b0000",
+    padding: "12px 18px",
+    borderRadius: "10px",
+    fontWeight: "bold",
+    fontSize: "18px",
+    marginBottom: "20px",
+    textAlign: "center"
+  }}
+>
+  Time Left: {formatTime(timeLeft)}
+</div>
             <div style={styles.metaBox}>
               <strong>Student:</strong> {studentName}
               <br />
