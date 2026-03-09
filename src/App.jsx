@@ -485,119 +485,123 @@ const percentage =
         )}
 
         {started && (
-          <div>
-          <div
-  style={{
-    background: "#ffe9e9",
-    color: "#8b0000",
-    padding: "12px 18px",
-    borderRadius: "10px",
-    fontWeight: "bold",
-    fontSize: "18px",
-    marginBottom: "20px",
-    textAlign: "center"
-  }}
->
-  Time Left: {formatTime(timeLeft)}
-</div>
-            <div style={styles.metaBox}>
-              <strong>Student:</strong> {studentName}
-              <br />
-              <strong>School:</strong> {school}
-              <br />
-              <strong>Parent Phone:</strong> {parentPhone}
-              <br />
-              <strong>Class:</strong> {selectedClass}
-            </div>
-
-            {questions.map((q, i) => (
-              <div key={i} style={styles.questionCard}>
-                <h3 style={{ marginTop: 0, marginBottom: "14px" }}>
-                  Q{i + 1}. {q.question}
-                </h3>
-
-                {[q.A, q.B, q.C, q.D].map((opt) => (
-                  <div key={opt} style={{ marginBottom: "8px", fontFamily: "Arial, sans-serif" }}>
-                    <label>
-                      <input
-                        type="radio"
-                        name={q.question}
-                        value={opt}
-                        checked={answers[q.question] === opt}
-                        onChange={() => selectAnswer(q.question, opt)}
-                        disabled={submitted}
-                      />
-                      {" "}{opt}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            ))}
-
-            {!submitted && (
-              <button onClick={submitTest} style={{ ...styles.buttonPrimary, marginRight: "12px" }}>
-                Submit Test
-              </button>
-            )}
-
-            {submitted && (
-              <button onClick={resetTest} style={styles.buttonSecondary}>
-                Start New Test
-              </button>
-            )}
-
-           {score !== null && (
-  <div style={styles.scoreBox}>
-
-    <div style={{ marginBottom: "12px", fontSize: "22px", fontWeight: "700" }}>
-      Sharvin Academy Result Summary
-    </div>
-
-    <div style={{ marginBottom: "8px" }}>
-      Student Name: <strong>{studentName}</strong>
-    </div>
-
-    <div style={{ marginBottom: "8px" }}>
-      School: <strong>{school}</strong>
-    </div>
-
-    <div style={{ marginBottom: "8px" }}>
-      Class: <strong>{selectedClass}</strong>
-    </div>
-
-    <div style={{ marginBottom: "8px" }}>
-      Parent Phone: <strong>{parentPhone}</strong>
-    </div>
-
-    <div style={{ marginBottom: "8px" }}>
-      Score: <strong>{score}</strong> / <strong>{totalMarks}</strong>
-    </div>
-
-    <div style={{ marginBottom: "8px" }}>
-      Percentage: <strong>{percentage}%</strong>
-    </div>
-
-    <div style={{ marginBottom: "12px" }}>
-      Date: <strong>{new Date().toLocaleString()}</strong>
-    </div>
-
-    <button
-      onClick={downloadResultPdf}
-      style={styles.buttonSuccess}
+  <div>
+    <div
+      style={{
+        background: "#ffe9e9",
+        color: "#8b0000",
+        padding: "12px 18px",
+        borderRadius: "10px",
+        fontWeight: "bold",
+        fontSize: "18px",
+        marginBottom: "20px",
+        textAlign: "center"
+      }}
     >
-      Download / Print Result
-    </button>
+      Time Left: {formatTime(timeLeft)}
+    </div>
 
- 
-</div>
+    <div style={styles.metaBox}>
+      <strong>Student:</strong> {studentName}
+      <br />
+      <strong>School:</strong> {school}
+      <br />
+      <strong>Parent Phone:</strong> {parentPhone}
+      <br />
+      <strong>Class:</strong> {selectedClass}
+    </div>
+
+    {questions.map((q, i) => (
+      <div key={i} style={styles.questionCard}>
+        <h3 style={{ marginTop: 0, marginBottom: "14px" }}>
+          Q{i + 1}. {q.question}
+        </h3>
+
+        {[q.A, q.B, q.C, q.D].map((opt) => (
+          <div
+            key={opt}
+            style={{ marginBottom: "8px", fontFamily: "Arial, sans-serif" }}
+          >
+            <label>
+              <input
+                type="radio"
+                name={q.question}
+                value={opt}
+                checked={answers[q.question] === opt}
+                onChange={() => selectAnswer(q.question, opt)}
+                disabled={submitted}
+              />
+              {" "}{opt}
+            </label>
+          </div>
+        ))}
+      </div>
+    ))}
+
+    {!submitted && (
+      <button
+        onClick={submitTest}
+        style={{ ...styles.buttonPrimary, marginRight: "12px" }}
+      >
+        Submit Test
+      </button>
+    )}
+
+    {submitted && (
+      <button onClick={resetTest} style={styles.buttonSecondary}>
+        Start New Test
+      </button>
+    )}
+
+    {score !== null && (
+      <div style={styles.scoreBox}>
+        <div style={{ marginBottom: "12px", fontSize: "22px", fontWeight: "700" }}>
+          Sharvin Academy Result Summary
+        </div>
+
+        <div style={{ marginBottom: "8px" }}>
+          Student Name: <strong>{studentName}</strong>
+        </div>
+
+        <div style={{ marginBottom: "8px" }}>
+          School: <strong>{school}</strong>
+        </div>
+
+        <div style={{ marginBottom: "8px" }}>
+          Class: <strong>{selectedClass}</strong>
+        </div>
+
+        <div style={{ marginBottom: "8px" }}>
+          Parent Phone: <strong>{parentPhone}</strong>
+        </div>
+
+        <div style={{ marginBottom: "8px" }}>
+          Score: <strong>{score}</strong> / <strong>{totalMarks}</strong>
+        </div>
+
+        <div style={{ marginBottom: "8px" }}>
+          Percentage: <strong>{percentage}%</strong>
+        </div>
+
+        <div style={{ marginBottom: "12px" }}>
+          Date: <strong>{new Date().toLocaleString()}</strong>
+        </div>
+
+        <button onClick={downloadResultPdf} style={styles.buttonSuccess}>
+          Download / Print Result
+        </button>
+      </div>
+    )}
+  </div>
 )}
 
-        <div style={styles.footer}>
-          Sharvin Academy • Premium Concept Learning Studio
-          <br />
-          Amanora Magarpatta Road, Hadapsar • Amanora Branch
-        </div>
-      </div>
-    
-  );
+<div style={styles.footer}>
+  Sharvin Academy • Premium Concept Learning Studio
+  <br />
+  Amanora Magarpatta Road, Hadapsar • Amanora Branch
+</div>
+
+</div>
+</div>
+);
 }
