@@ -589,6 +589,7 @@ const percentage =
     </button>
 
   </div>
+  </>
 )}
 
         <div style={styles.footer}>
