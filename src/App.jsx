@@ -206,6 +206,10 @@ function formatTime(seconds) {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 }
 
+function downloadResultPdf() {
+  window.print();
+}
+
   const styles = {
     page: {
       minHeight: "100vh",
@@ -329,6 +333,18 @@ function formatTime(seconds) {
       fontWeight: "700",
       fontFamily: "Arial, sans-serif",
     },
+
+    buttonSuccess: {
+  padding: "14px 22px",
+  fontSize: "16px",
+  cursor: "pointer",
+  background: "#1f7a3d",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "12px",
+  fontWeight: "700",
+  marginTop: "16px"
+},
     error: {
       color: "#dc2626",
       marginTop: "6px",
@@ -365,6 +381,13 @@ function formatTime(seconds) {
       fontFamily: "Arial, sans-serif",
     },
   };
+function downloadResultPdf() {
+  window.print();
+}
+
+const totalMarks = questions.length;
+const percentage =
+  totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : "0.00";
 
   return (
     <div style={styles.page}>
@@ -521,13 +544,50 @@ function formatTime(seconds) {
               </button>
             )}
 
-            {score !== null && (
-              <div style={styles.scoreBox}>
-                Score: {score} / {questions.length}
-              </div>
-            )}
-          </>
-        )}
+           {score !== null && (
+  <div style={styles.scoreBox}>
+
+    <div style={{ marginBottom: "12px", fontSize: "22px", fontWeight: "700" }}>
+      Sharvin Academy Result Summary
+    </div>
+
+    <div style={{ marginBottom: "8px" }}>
+      Student Name: <strong>{studentName}</strong>
+    </div>
+
+    <div style={{ marginBottom: "8px" }}>
+      School: <strong>{school}</strong>
+    </div>
+
+    <div style={{ marginBottom: "8px" }}>
+      Class: <strong>{selectedClass}</strong>
+    </div>
+
+    <div style={{ marginBottom: "8px" }}>
+      Parent Phone: <strong>{parentPhone}</strong>
+    </div>
+
+    <div style={{ marginBottom: "8px" }}>
+      Score: <strong>{score}</strong> / <strong>{totalMarks}</strong>
+    </div>
+
+    <div style={{ marginBottom: "8px" }}>
+      Percentage: <strong>{percentage}%</strong>
+    </div>
+
+    <div style={{ marginBottom: "12px" }}>
+      Date: <strong>{new Date().toLocaleString()}</strong>
+    </div>
+
+    <button
+      onClick={downloadResultPdf}
+      style={styles.buttonSuccess}
+    >
+      Download / Print Result
+    </button>
+
+  </div>
+)}
 
         <div style={styles.footer}>
           Sharvin Academy • Premium Concept Learning Studio
