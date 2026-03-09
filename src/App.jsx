@@ -598,6 +598,6 @@ const percentage =
           Amanora Magarpatta Road, Hadapsar • Amanora Branch
         </div>
       </div>
-    </div>
+    
   );
 }
