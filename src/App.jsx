@@ -145,7 +145,7 @@ function getTestDurationByClass() {
 
       const result = await response.text();
       console.log("Saved result:", result);
-      alert("Result saved successfully.");
+      
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     } catch (error) {
       console.error("Failed to save result:", error);
