@@ -485,7 +485,7 @@ const percentage =
         )}
 
         {started && (
-          <>
+          <div>
           <div
   style={{
     background: "#ffe9e9",
@@ -588,8 +588,8 @@ const percentage =
       Download / Print Result
     </button>
 
-  </div>
-  </>
+ </div>
+</div>
 )}
 
         <div style={styles.footer}>
