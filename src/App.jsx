@@ -387,7 +387,9 @@ function downloadResultPdf() {
 
 const totalMarks = questions.length;
 const percentage =
-  totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : "0.00";
+  score !== null && totalMarks > 0
+    ? ((score / totalMarks) * 100).toFixed(2)
+    : "0.00";
 
   return (
     <div style={styles.page}>
