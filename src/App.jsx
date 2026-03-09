@@ -588,7 +588,7 @@ const percentage =
       Download / Print Result
     </button>
 
- </div>
+ 
 </div>
 )}
 
