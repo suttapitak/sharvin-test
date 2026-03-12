@@ -2,27 +2,92 @@ import { useState, useEffect } from "react";
 import logo from "./assets/logo.jpg";
 
 const API =
-  "https://script.google.com/macros/s/AKfycbwIFddo27aMS7nr-Hr21NjOmdC8qbLDCMUPV0g77WQVlQh_yg2i9VBrPc-M60KrmYnL/exec";
+  "https://script.google.com/macros/s/AKfycbzJRUsSBXp5fPBhCp0sZP9Q9NKcM2DGIagbhf0EOmPrzER3xDM-jEejv0jhVJsd6WYO/exec";
+
+const SUBJECT_OPTIONS = [
+  "Maths",
+  "Science",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "English",
+  "SST",
+  "Marathi",
+  "Hindi",
+];
 
 export default function App() {
   const [studentName, setStudentName] = useState("");
   const [school, setSchool] = useState("");
   const [parentPhone, setParentPhone] = useState("");
-  const [selectedClass, setSelectedClass] = useState("3");
+  const [selectedClass, setSelectedClass] = useState("1");
+  const [selectedSubject, setSelectedSubject] = useState("Maths");
+  const [selectedChapter, setSelectedChapter] = useState("All Chapters");
+  const [selectedConcept, setSelectedConcept] = useState("All Concepts");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("All Levels");
+
+  const [chapterOptions, setChapterOptions] = useState(["All Chapters"]);
+  const [conceptOptions, setConceptOptions] = useState(["All Concepts"]);
+  const [difficultyOptions, setDifficultyOptions] = useState(["All Levels"]);
+
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [score, setScore] = useState(null);
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);   
-  
+  const [timeLeft, setTimeLeft] = useState(0);
+
   const [errors, setErrors] = useState({
     studentName: "",
     school: "",
     parentPhone: "",
     selectedClass: "",
+    selectedSubject: "",
   });
+
+  useEffect(() => {
+    document.title = "Sharvin Academy Test Portal";
+  }, []);
+
+  useEffect(() => {
+    async function loadFilters() {
+      try {
+        const url =
+          `${API}?mode=filters` +
+          `&class=${encodeURIComponent(selectedClass)}` +
+          `&subject=${encodeURIComponent(selectedSubject)}` +
+          `&chapter=${encodeURIComponent(selectedChapter)}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const chapters = ["All Chapters", ...(data.chapters || [])];
+        const concepts = ["All Concepts", ...(data.concepts || [])];
+        const difficulties = ["All Levels", ...(data.difficulties || [])];
+
+        setChapterOptions(chapters);
+        setConceptOptions(concepts);
+        setDifficultyOptions(difficulties);
+
+        if (!chapters.includes(selectedChapter)) {
+          setSelectedChapter("All Chapters");
+        }
+        if (!concepts.includes(selectedConcept)) {
+          setSelectedConcept("All Concepts");
+        }
+        if (!difficulties.includes(selectedDifficulty)) {
+          setSelectedDifficulty("All Levels");
+        }
+      } catch (error) {
+        console.error("Failed to load filters:", error);
+      }
+    }
+
+    if (selectedClass && selectedSubject) {
+      loadFilters();
+    }
+  }, [selectedClass, selectedSubject, selectedChapter]);
 
   function validateForm() {
     const newErrors = {
@@ -30,6 +95,7 @@ export default function App() {
       school: "",
       parentPhone: "",
       selectedClass: "",
+      selectedSubject: "",
     };
 
     let isValid = true;
@@ -57,6 +123,11 @@ export default function App() {
       isValid = false;
     }
 
+    if (!selectedSubject.trim()) {
+      newErrors.selectedSubject = "Please select subject.";
+      isValid = false;
+    }
+
     setErrors(newErrors);
 
     if (!isValid) {
@@ -68,15 +139,17 @@ export default function App() {
         alert(newErrors.parentPhone);
       } else if (newErrors.selectedClass) {
         alert(newErrors.selectedClass);
+      } else if (newErrors.selectedSubject) {
+        alert(newErrors.selectedSubject);
       }
     }
 
     return isValid;
   }
 
-function getTestDurationByClass() {
-  return 30 * 60; // 30 minutes for all classes
-}
+  function getTestDurationByClass() {
+    return 30 * 60;
+  }
 
   async function startTest() {
     if (!validateForm()) return;
@@ -88,8 +161,26 @@ function getTestDurationByClass() {
     setTimeLeft(getTestDurationByClass());
 
     try {
-      const response = await fetch(`${API}?class=${selectedClass}`);
+      const url =
+        `${API}?class=${encodeURIComponent(selectedClass)}` +
+        `&subject=${encodeURIComponent(selectedSubject)}` +
+        `&chapter=${encodeURIComponent(selectedChapter)}` +
+        `&concept=${encodeURIComponent(selectedConcept)}` +
+        `&difficulty=${encodeURIComponent(selectedDifficulty)}`;
+
+      const response = await fetch(url);
       const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        alert("No questions available for selected filters. Please change Chapter, Concept, or Difficulty.");
+        return;
+      }
+
+      if (data.length < 30) {
+        alert(`Only ${data.length} questions are available for selected filters. Please add more questions or relax the filters.`);
+        return;
+      }
+
       setQuestions(data);
       setStarted(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -101,23 +192,33 @@ function getTestDurationByClass() {
     }
   }
 
-  function selectAnswer(questionText, value) {
+  function selectAnswer(questionId, value) {
     setAnswers((prev) => ({
       ...prev,
-      [questionText]: value,
+      [questionId]: value,
     }));
   }
 
-  async function submitTest() {
-    let correct = 0;
+  function calculateResult() {
+    let totalScore = 0;
+    let totalMarks = 0;
 
     questions.forEach((q) => {
-      if (String(answers[q.question]) === String(q.correct)) {
-        correct++;
+      const marks = Number(q.marks || 1);
+      totalMarks += marks;
+
+      if (String(answers[q.id]) === String(q.correct)) {
+        totalScore += marks;
       }
     });
 
-    setScore(correct);
+    return { totalScore, totalMarks };
+  }
+
+  async function submitTest() {
+    const { totalScore, totalMarks } = calculateResult();
+
+    setScore(totalScore);
     setSubmitted(true);
 
     const payload = {
@@ -125,10 +226,11 @@ function getTestDurationByClass() {
       school: school,
       parentPhone: parentPhone,
       className: selectedClass,
-      score: correct,
-      totalQuestions: questions.length,
+      subjectName: selectedSubject,
+      score: totalScore,
+      totalMarks: totalMarks,
       attempted: Object.keys(answers).length,
-      testType: `Class ${selectedClass} Online Test`,
+      testType: `Class ${selectedClass} ${selectedSubject} Practice Test`,
       submittedBy: "Student",
       answers: answers,
       questions: questions,
@@ -145,7 +247,6 @@ function getTestDurationByClass() {
 
       const result = await response.text();
       console.log("Saved result:", result);
-      
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     } catch (error) {
       console.error("Failed to save result:", error);
@@ -153,37 +254,41 @@ function getTestDurationByClass() {
     }
   }
 
-useEffect(() => {
-  if (!started || submitted) return;
-  if (timeLeft <= 0) return;
+  useEffect(() => {
+    if (!started || submitted) return;
+    if (timeLeft <= 0) return;
 
-  const timer = setInterval(() => {
-    setTimeLeft((prev) => {
-      if (prev <= 1) {
-        clearInterval(timer);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
 
-        setTimeout(() => {
-          if (!submitted) {
-            submitTest();
-            alert("Time is over. Test submitted automatically.");
-          }
-        }, 0);
+          setTimeout(() => {
+            if (!submitted) {
+              submitTest();
+              alert("Time is over. Test submitted automatically.");
+            }
+          }, 0);
 
-        return 0;
-      }
+          return 0;
+        }
 
-      return prev - 1;
-    });
-  }, 1000);
+        return prev - 1;
+      });
+    }, 1000);
 
-  return () => clearInterval(timer);
-}, [started, submitted, timeLeft]);
+    return () => clearInterval(timer);
+  }, [started, submitted, timeLeft]);
 
   function resetTest() {
     setStudentName("");
     setSchool("");
     setParentPhone("");
-    setSelectedClass("3");
+    setSelectedClass("1");
+    setSelectedSubject("Maths");
+    setSelectedChapter("All Chapters");
+    setSelectedConcept("All Concepts");
+    setSelectedDifficulty("All Levels");
     setQuestions([]);
     setAnswers({});
     setScore(null);
@@ -196,19 +301,26 @@ useEffect(() => {
       school: "",
       parentPhone: "",
       selectedClass: "",
+      selectedSubject: "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-function formatTime(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-}
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  }
 
-function downloadResultPdf() {
-  window.print();
-}
+  function downloadResultPdf() {
+    window.print();
+  }
+
+  const { totalMarks } = calculateResult();
+  const percentage =
+    score !== null && totalMarks > 0
+      ? ((score / totalMarks) * 100).toFixed(2)
+      : "0.00";
 
   const styles = {
     page: {
@@ -333,18 +445,18 @@ function downloadResultPdf() {
       fontWeight: "700",
       fontFamily: "Arial, sans-serif",
     },
-
     buttonSuccess: {
-  padding: "14px 22px",
-  fontSize: "16px",
-  cursor: "pointer",
-  background: "#1f7a3d",
-  color: "#ffffff",
-  border: "none",
-  borderRadius: "12px",
-  fontWeight: "700",
-  marginTop: "16px"
-},
+      padding: "14px 22px",
+      fontSize: "16px",
+      cursor: "pointer",
+      background: "#1f7a3d",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "12px",
+      fontWeight: "700",
+      marginTop: "16px",
+      fontFamily: "Arial, sans-serif",
+    },
     error: {
       color: "#dc2626",
       marginTop: "6px",
@@ -367,7 +479,7 @@ function downloadResultPdf() {
       borderRadius: "14px",
       background: "#ecfdf5",
       color: "#166534",
-      fontSize: "28px",
+      fontSize: "20px",
       fontWeight: "700",
       fontFamily: "Arial, sans-serif",
       border: "1px solid #bbf7d0",
@@ -381,15 +493,6 @@ function downloadResultPdf() {
       fontFamily: "Arial, sans-serif",
     },
   };
-function downloadResultPdf() {
-  window.print();
-}
-
-const totalMarks = questions.length;
-const percentage =
-  score !== null && totalMarks > 0
-    ? ((score / totalMarks) * 100).toFixed(2)
-    : "0.00";
 
   return (
     <div style={styles.page}>
@@ -398,7 +501,7 @@ const percentage =
           <img src={logo} alt="Sharvin Academy Logo" style={styles.logo} />
           <h1 style={styles.academyName}>Sharvin Academy</h1>
           <div style={styles.punchline}>Premium Concept Learning Studio</div>
-          <div style={styles.subtitle}>Scholarship & Diagnostic Test Portal</div>
+          <div style={styles.subtitle}>Practice Test Portal</div>
           <div style={styles.infoBar}>
             Please fill all mandatory details correctly before starting the test.
             <br />
@@ -470,12 +573,85 @@ const percentage =
                 }}
                 style={styles.select}
               >
-                <option value="3">Class 3</option>
-                <option value="4">Class 4</option>
-                <option value="5">Class 5</option>
-                <option value="6">Class 6</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((cls) => (
+                  <option key={cls} value={String(cls)}>
+                    Class {cls}
+                  </option>
+                ))}
               </select>
               {errors.selectedClass && <div style={styles.error}>{errors.selectedClass}</div>}
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={styles.label}>
+                Select Subject <span style={{ color: "red" }}>*</span>
+              </label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => {
+                  setSelectedSubject(e.target.value);
+                  setSelectedChapter("All Chapters");
+                  setSelectedConcept("All Concepts");
+                  setSelectedDifficulty("All Levels");
+                  setErrors((prev) => ({ ...prev, selectedSubject: "" }));
+                }}
+                style={styles.select}
+              >
+                {SUBJECT_OPTIONS.map((subject) => (
+                  <option key={subject} value={subject}>
+                    {subject}
+                  </option>
+                ))}
+              </select>
+              {errors.selectedSubject && <div style={styles.error}>{errors.selectedSubject}</div>}
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={styles.label}>Chapter</label>
+              <select
+                value={selectedChapter}
+                onChange={(e) => {
+                  setSelectedChapter(e.target.value);
+                  setSelectedConcept("All Concepts");
+                }}
+                style={styles.select}
+              >
+                {chapterOptions.map((chapter) => (
+                  <option key={chapter} value={chapter}>
+                    {chapter}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={styles.label}>Concept</label>
+              <select
+                value={selectedConcept}
+                onChange={(e) => setSelectedConcept(e.target.value)}
+                style={styles.select}
+              >
+                {conceptOptions.map((concept) => (
+                  <option key={concept} value={concept}>
+                    {concept}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={styles.label}>Difficulty</label>
+              <select
+                value={selectedDifficulty}
+                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                style={styles.select}
+              >
+                {difficultyOptions.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <button onClick={startTest} disabled={loading} style={styles.buttonPrimary}>
@@ -485,123 +661,198 @@ const percentage =
         )}
 
         {started && (
-  <div>
-    <div
-      style={{
-        background: "#ffe9e9",
-        color: "#8b0000",
-        padding: "12px 18px",
-        borderRadius: "10px",
-        fontWeight: "bold",
-        fontSize: "18px",
-        marginBottom: "20px",
-        textAlign: "center"
-      }}
-    >
-      Time Left: {formatTime(timeLeft)}
-    </div>
+          <div>
+            <div
+              style={{
+                background: "#ffe9e9",
+                color: "#8b0000",
+                padding: "12px 18px",
+                borderRadius: "10px",
+                fontWeight: "bold",
+                fontSize: "18px",
+                marginBottom: "20px",
+                textAlign: "center"
+              }}
+            >
+              Time Left: {formatTime(timeLeft)}
+            </div>
 
-    <div style={styles.metaBox}>
-      <strong>Student:</strong> {studentName}
-      <br />
-      <strong>School:</strong> {school}
-      <br />
-      <strong>Parent Phone:</strong> {parentPhone}
-      <br />
-      <strong>Class:</strong> {selectedClass}
-    </div>
+            <div style={styles.metaBox}>
+              <strong>Student:</strong> {studentName}
+              <br />
+              <strong>School:</strong> {school}
+              <br />
+              <strong>Parent Phone:</strong> {parentPhone}
+              <br />
+              <strong>Class:</strong> {selectedClass}
+              <br />
+              <strong>Subject:</strong> {selectedSubject}
+              <br />
+              <strong>Chapter:</strong> {selectedChapter}
+              <br />
+              <strong>Concept:</strong> {selectedConcept}
+              <br />
+              <strong>Difficulty:</strong> {selectedDifficulty}
+            </div>
 
-    {questions.map((q, i) => (
-      <div key={i} style={styles.questionCard}>
-        <h3 style={{ marginTop: 0, marginBottom: "14px" }}>
-          Q{i + 1}. {q.question}
-        </h3>
+            {questions.map((q, i) => (
+              <div key={q.id || i} style={styles.questionCard}>
+                <h3 style={{ marginTop: 0, marginBottom: "10px" }}>
+                  Q{i + 1}. {q.question}
+                </h3>
 
-        {[q.A, q.B, q.C, q.D].map((opt) => (
-          <div
-            key={opt}
-            style={{ marginBottom: "8px", fontFamily: "Arial, sans-serif" }}
-          >
-            <label>
-              <input
-                type="radio"
-                name={q.question}
-                value={opt}
-                checked={answers[q.question] === opt}
-                onChange={() => selectAnswer(q.question, opt)}
-                disabled={submitted}
-              />
-              {" "}{opt}
-            </label>
+                <div style={{ fontSize: "13px", color: "#555", marginBottom: "12px" }}>
+                  Chapter: {q.chapter || "-"} | Concept: {q.concept || "-"} | Difficulty: {q.difficulty || "-"} | Marks: {q.marks || 1}
+                </div>
+
+                {[q.A, q.B, q.C, q.D].map((opt) => {
+                  const selectedAnswer = answers[q.id];
+                  const attemptedThisQuestion = selectedAnswer !== undefined && selectedAnswer !== "";
+                  const isSelectedOption = String(selectedAnswer) === String(opt);
+                  const isCorrectOption = String(q.correct) === String(opt);
+
+                  const showGreen =
+                    submitted &&
+                    attemptedThisQuestion &&
+                    (isCorrectOption && (isSelectedOption || selectedAnswer !== q.correct));
+
+                  const showRed =
+                    submitted &&
+                    attemptedThisQuestion &&
+                    isSelectedOption &&
+                    !isCorrectOption;
+
+                  let border = "1px solid #ddd";
+                  let background = "#fff";
+
+                  if (showGreen) {
+                    border = "2px solid #2e7d32";
+                    background = "#e8f5e9";
+                  } else if (showRed) {
+                    border = "2px solid #c62828";
+                    background = "#ffebee";
+                  }
+
+                  return (
+                    <div
+                      key={opt}
+                      style={{
+                        marginBottom: "8px",
+                        fontFamily: "Arial, sans-serif",
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        border: border,
+                        background: background
+                      }}
+                    >
+                      <label style={{ display: "block", cursor: submitted ? "default" : "pointer" }}>
+                        <input
+                          type="radio"
+                          name={`question-${q.id}`}
+                          value={opt}
+                          checked={answers[q.id] === opt}
+                          onChange={() => selectAnswer(q.id, opt)}
+                          disabled={submitted}
+                        />
+                        {" "}{opt}
+
+                        {submitted && attemptedThisQuestion && showGreen && (
+                          <span style={{ color: "#2e7d32", fontWeight: "700", marginLeft: "10px" }}>
+                            Correct
+                          </span>
+                        )}
+
+                        {submitted && attemptedThisQuestion && showRed && (
+                          <span style={{ color: "#c62828", fontWeight: "700", marginLeft: "10px" }}>
+                            Wrong
+                          </span>
+                        )}
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+
+            {!submitted && (
+              <button
+                onClick={submitTest}
+                style={{ ...styles.buttonPrimary, marginRight: "12px" }}
+              >
+                Submit Test
+              </button>
+            )}
+
+            {submitted && (
+              <button onClick={resetTest} style={styles.buttonSecondary}>
+                Start New Test
+              </button>
+            )}
+
+            {score !== null && (
+              <div style={styles.scoreBox}>
+                <div style={{ marginBottom: "12px", fontSize: "22px", fontWeight: "700" }}>
+                  Sharvin Academy Result Summary
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Student Name: <strong>{studentName}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  School: <strong>{school}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Class: <strong>{selectedClass}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Subject: <strong>{selectedSubject}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Chapter: <strong>{selectedChapter}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Concept: <strong>{selectedConcept}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Difficulty: <strong>{selectedDifficulty}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Parent Phone: <strong>{parentPhone}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Score: <strong>{score}</strong> / <strong>{totalMarks}</strong>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  Percentage: <strong>{percentage}%</strong>
+                </div>
+
+                <div style={{ marginBottom: "12px" }}>
+                  Date: <strong>{new Date().toLocaleString()}</strong>
+                </div>
+
+                <button onClick={downloadResultPdf} style={styles.buttonSuccess}>
+                  Download / Print Result
+                </button>
+              </div>
+            )}
           </div>
-        ))}
+        )}
+
+        <div style={styles.footer}>
+          Sharvin Academy • Premium Concept Learning Studio
+          <br />
+          Amanora Magarpatta Road, Hadapsar • Amanora Branch
+        </div>
       </div>
-    ))}
-
-    {!submitted && (
-      <button
-        onClick={submitTest}
-        style={{ ...styles.buttonPrimary, marginRight: "12px" }}
-      >
-        Submit Test
-      </button>
-    )}
-
-    {submitted && (
-      <button onClick={resetTest} style={styles.buttonSecondary}>
-        Start New Test
-      </button>
-    )}
-
-    {score !== null && (
-      <div style={styles.scoreBox}>
-        <div style={{ marginBottom: "12px", fontSize: "22px", fontWeight: "700" }}>
-          Sharvin Academy Result Summary
-        </div>
-
-        <div style={{ marginBottom: "8px" }}>
-          Student Name: <strong>{studentName}</strong>
-        </div>
-
-        <div style={{ marginBottom: "8px" }}>
-          School: <strong>{school}</strong>
-        </div>
-
-        <div style={{ marginBottom: "8px" }}>
-          Class: <strong>{selectedClass}</strong>
-        </div>
-
-        <div style={{ marginBottom: "8px" }}>
-          Parent Phone: <strong>{parentPhone}</strong>
-        </div>
-
-        <div style={{ marginBottom: "8px" }}>
-          Score: <strong>{score}</strong> / <strong>{totalMarks}</strong>
-        </div>
-
-        <div style={{ marginBottom: "8px" }}>
-          Percentage: <strong>{percentage}%</strong>
-        </div>
-
-        <div style={{ marginBottom: "12px" }}>
-          Date: <strong>{new Date().toLocaleString()}</strong>
-        </div>
-
-        <button onClick={downloadResultPdf} style={styles.buttonSuccess}>
-          Download / Print Result
-        </button>
-      </div>
-    )}
-  </div>
-)}
-
-<div style={styles.footer}>
-  Sharvin Academy • Premium Concept Learning Studio
-  <br />
-  Amanora Magarpatta Road, Hadapsar • Amanora Branch
-</div>
-
-</div>
-</div>
-);
+    </div>
+  );
 }
