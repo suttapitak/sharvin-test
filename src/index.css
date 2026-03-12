@@ -23,3 +23,17 @@ img {
 input, select, button {
   font: inherit;
 }
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  button {
+    display: none !important;
+  }
+
+  input,
+  select {
+    display: none !important;
+  }
+}
