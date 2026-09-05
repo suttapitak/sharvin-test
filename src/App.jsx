@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import logo from "./assets/logo.jpg";
 
 const API = "https://script.google.com/macros/s/AKfycbwwxw-TEHqb5yuv2B1nGGpgg0SIsQQ8hOCzOUY81I12txi3PmM9tLsJ1GLR9O-aeAwe/exec";
-
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const SUBJECT_OPTIONS = [
   "Maths",
   "Science",
@@ -216,7 +217,38 @@ export default function App() {
 
     setScore(totalScore);
     setSubmitted(true);
+const percentage =
+  totalMarks > 0 ? (totalScore / totalMarks) * 100 : 0;
 
+try {
+  const gamificationResponse = await fetch(
+    `${SUPABASE_URL}/rest/v1/rpc/complete_student_test`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({
+        p_student_name: studentName,
+        p_parent_mobile: parentPhone,
+        p_class_name: selectedClass,
+        p_school_name: school,
+        p_percentage: percentage,
+      }),
+    }
+  );
+
+  if (!gamificationResponse.ok) {
+    throw new Error(await gamificationResponse.text());
+  }
+
+  const gamificationData = await gamificationResponse.json();
+  console.log("Gamification updated:", gamificationData);
+} catch (error) {
+  console.error("Gamification update failed:", error);
+}
     const payload = {
       studentName: studentName,
       school: school,
