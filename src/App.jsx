@@ -175,10 +175,7 @@ export default function App() {
         return;
       }
 
-      if (data.length < 30) {
-        alert(`Only ${data.length} questions are available for selected filters. Please add more questions or relax the filters.`);
-        return;
-      }
+  
 
       setQuestions(data);
       setStarted(true);
