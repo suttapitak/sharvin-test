@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import logo from "./assets/logo.jpg";
 
-const API =
-  "hhttps://script.google.com/macros/s/AKfycbwIFddo27aMS7nr-Hr21NjOmdC8qbLDCMUPV0g77WQVlQh_yg2i9VBrPc-M60KrmYnL/exec";
+const API = "https://script.google.com/macros/s/AKfycbwwxw-TEHqb5yuv2B1nGGpgg0SIsQQ8hOCzOUY81I12txi3PmM9tLsJ1GLR9O-aeAwe/exec";
 
 const SUBJECT_OPTIONS = [
   "Maths",
