@@ -36,6 +36,7 @@ export default function App() {
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [gamification, setGamification] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
 
   const [errors, setErrors] = useState({
@@ -246,6 +247,7 @@ try {
 
   const gamificationData = await gamificationResponse.json();
   console.log("Gamification updated:", gamificationData);
+  setGamification(gamificationData);
 } catch (error) {
   console.error("Gamification update failed:", error);
 }
@@ -866,7 +868,27 @@ try {
                 <div style={{ marginBottom: "12px" }}>
                   Date: <strong>{new Date().toLocaleString()}</strong>
                 </div>
-
+{gamification && gamification.length > 0 && (
+  <div
+    style={{
+      marginTop: "20px",
+      marginBottom: "20px",
+      padding: "16px",
+      borderRadius: "12px",
+      background: "#fff7d6",
+      fontWeight: "700",
+      fontSize: "18px",
+    }}
+  >
+    🏆 Level: {gamification[0].student_level}
+    <br />
+    🪙 Coins Earned: +{gamification[0].coins_awarded}
+    <br />
+    💰 Total Gold Coins: {gamification[0].total_gold_coins}
+    <br />
+    ✅ Tests Attempted: {gamification[0].total_tests_attempted}
+  </div>
+)}
                 <button onClick={downloadResultPdf} style={styles.buttonSuccess}>
                   Download / Print Result
                 </button>
