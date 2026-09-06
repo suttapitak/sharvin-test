@@ -882,12 +882,37 @@ try {
       fontSize: "18px",
     }}
   >
-   {gamification[0].student_level === 1 ? "🥉 Level 1 — Bronze" :
- gamification[0].student_level === 2 ? "🥈 Level 2 — Silver" :
- gamification[0].student_level === 3 ? "🥇 Level 3 — Gold" :
- gamification[0].student_level === 4 ? "💎 Level 4 — Platinum" :
- gamification[0].student_level === 5 ? "💠 Level 5 — Diamond" :
- "👑 Level 6 — Champion"}
+   {(() => {
+  const coins = gamification[0].total_gold_coins;
+
+  const tiers = [
+    { min: 0, name: "🥉 Bronze", next: 50, nextName: "Bronze Pro" },
+    { min: 50, name: "🥉 Bronze Pro", next: 100, nextName: "Bronze Pro Max" },
+    { min: 100, name: "🥉 Bronze Pro Max", next: 150, nextName: "Silver" },
+    { min: 150, name: "🥈 Silver", next: 200, nextName: "Silver Pro" },
+    { min: 200, name: "🥈 Silver Pro", next: 250, nextName: "Silver Pro Max" },
+    { min: 250, name: "🥈 Silver Pro Max", next: 300, nextName: "Gold" },
+    { min: 300, name: "🥇 Gold", next: 350, nextName: "Gold Pro" },
+    { min: 350, name: "🥇 Gold Pro", next: 400, nextName: "Gold Pro Max" },
+    { min: 400, name: "🥇 Gold Pro Max", next: 450, nextName: "Platinum" },
+    { min: 450, name: "💎 Platinum", next: 500, nextName: "Platinum Pro" },
+    { min: 500, name: "💎 Platinum Pro", next: 550, nextName: "Platinum Pro Max" },
+    { min: 550, name: "💎 Platinum Pro Max", next: null, nextName: null },
+  ];
+
+  const currentTier = [...tiers].reverse().find((tier) => coins >= tier.min);
+
+  return (
+    <>
+      {currentTier.name}
+      <br />
+      ✨{" "}
+      {currentTier.next
+        ? `${currentTier.next - coins} coins to ${currentTier.nextName}`
+        : "Maximum tier achieved!"}
+    </>
+  );
+})()}
     <br />
     🪙 Coins Earned: +{gamification[0].coins_awarded}
     <br />
