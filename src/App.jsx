@@ -179,7 +179,9 @@ export default function App() {
 
   
 
-      setQuestions(data);
+     const shuffledQuestions = [...data].sort(() => Math.random() - 0.5);
+const selectedQuestions = shuffledQuestions.slice(0, 10);
+setQuestions(selectedQuestions);
       setStarted(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
