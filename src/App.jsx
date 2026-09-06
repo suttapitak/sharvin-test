@@ -882,7 +882,12 @@ try {
       fontSize: "18px",
     }}
   >
-    🏆 Level: {gamification[0].student_level}
+   {gamification[0].student_level === 1 ? "🥉 Level 1 — Bronze" :
+ gamification[0].student_level === 2 ? "🥈 Level 2 — Silver" :
+ gamification[0].student_level === 3 ? "🥇 Level 3 — Gold" :
+ gamification[0].student_level === 4 ? "💎 Level 4 — Platinum" :
+ gamification[0].student_level === 5 ? "💠 Level 5 — Diamond" :
+ "👑 Level 6 — Champion"}
     <br />
     🪙 Coins Earned: +{gamification[0].coins_awarded}
     <br />
