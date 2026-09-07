@@ -37,6 +37,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [gamification, setGamification] = useState(null);
+  const [tierUp, setTierUp] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
 
   const [errors, setErrors] = useState({
@@ -250,6 +251,21 @@ try {
   const gamificationData = await gamificationResponse.json();
   console.log("Gamification updated:", gamificationData);
   setGamification(gamificationData);
+ const newCoins = Number(gamificationData?.[0]?.total_gold_coins || 0);
+const coinsEarned = Number(gamificationData?.[0]?.coins_awarded || 0);
+const oldCoins = newCoins - coinsEarned;
+
+const tierThresholds = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550];
+
+const crossedTier = tierThresholds.some(
+  (threshold) => oldCoins < threshold && newCoins >= threshold
+);
+
+if (crossedTier) {
+  setTierUp(gamificationData[0].student_level);
+} else {
+  setTierUp(null);
+}
 } catch (error) {
   console.error("Gamification update failed:", error);
 }
@@ -870,7 +886,87 @@ try {
                 <div style={{ marginBottom: "12px" }}>
                   Date: <strong>{new Date().toLocaleString()}</strong>
                 </div>
-{gamification && gamification.length > 0 && (
+{tierUp && (
+  <div
+    style={{
+      marginTop: "20px",
+      marginBottom: "20px",
+      padding: "24px",
+      borderRadius: "16px",
+      background: "linear-gradient(135deg, #071a4a, #102d70)",
+      border: "2px solid #d4af37",
+      textAlign: "center",
+      color: "#ffffff",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+    }}
+  >
+    <img
+      src={logo}
+      alt="Sharvin Academy"
+      style={{
+        width: "110px",
+        height: "110px",
+        objectFit: "contain",
+        borderRadius: "12px",
+        marginBottom: "12px",
+      }}
+    />
+
+    <div
+      style={{
+        fontSize: "30px",
+        fontWeight: "800",
+        color: "#ffd700",
+        marginBottom: "8px",
+      }}
+    >
+      🎉 CONGRATULATIONS! 🎉
+    </div>
+
+    <div
+      style={{
+        fontSize: "21px",
+        fontWeight: "700",
+        marginBottom: "6px",
+      }}
+    >
+      You have been promoted to
+    </div>
+
+    <div
+      style={{
+        fontSize: "28px",
+        fontWeight: "800",
+        color: "#ffd700",
+      }}
+    >
+      {tierUp === 2
+        ? "🥉 Bronze Pro"
+        : tierUp === 3
+        ? "🥉 Bronze Pro Max"
+        : tierUp === 4
+        ? "🥈 Silver"
+        : tierUp === 5
+        ? "🥈 Silver Pro"
+        : tierUp === 6
+        ? "🥈 Silver Pro Max"
+        : tierUp === 7
+        ? "🥇 Gold"
+        : tierUp === 8
+        ? "🥇 Gold Pro"
+        : tierUp === 9
+        ? "🥇 Gold Pro Max"
+        : tierUp === 10
+        ? "💎 Platinum"
+        : tierUp === 11
+        ? "💎 Platinum Pro"
+        : tierUp === 12
+        ? "💎 Platinum Pro Max"
+        : "New Tier"}
+    </div>
+  </div>
+)}
+                {gamification && gamification.length > 0 && (
   <div
     style={{
       marginTop: "20px",
