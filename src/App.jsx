@@ -154,6 +154,25 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
   function getTestDurationByClass() {
     return 30 * 60;
   }
+function getTierName(coins) {
+  const total = Number(coins || 0);
+
+  if (total >= 550) return "Platinum Pro Max";
+  if (total >= 500) return "Platinum Pro";
+  if (total >= 450) return "Platinum";
+  if (total >= 400) return "Gold Pro Max";
+  if (total >= 350) return "Gold Pro";
+  if (total >= 300) return "Gold";
+  if (total >= 250) return "Silver Pro Max";
+  if (total >= 200) return "Silver Pro";
+  if (total >= 150) return "Silver";
+  if (total >= 100) return "Bronze Pro Max";
+  if (total >= 50) return "Bronze Pro";
+
+  return "Bronze";
+}
+
+async function loadStudentDashboard() {
 async function loadStudentDashboard() {
   if (!studentName || !parentPhone || !selectedClass) {
     alert("Please enter Student Name, Parent Mobile Number, and Class first.");
@@ -959,6 +978,67 @@ if (crossedTier) {
 
             {score !== null && (
               <div style={styles.scoreBox}>
+                {/* Performance Celebration Banner */}
+<div
+  style={{
+    textAlign: "center",
+    padding: "22px 16px",
+    marginBottom: "22px",
+    borderRadius: "18px",
+    background:
+      score >= 6
+        ? "linear-gradient(135deg, #fff7cc, #ffe082)"
+        : score >= 1
+        ? "linear-gradient(135deg, #e3f2fd, #bbdefb)"
+        : "linear-gradient(135deg, #f5f5f5, #e0e0e0)",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
+    border: "2px solid rgba(255,255,255,0.8)",
+  }}
+>
+  <div
+    style={{
+      fontSize: "30px",
+      fontWeight: "800",
+      marginBottom: "8px",
+    }}
+  >
+    {score >= 6
+      ? "🎉 Congratulations!"
+      : score >= 1
+      ? "👍 Good Effort!"
+      : "💪 Hard Luck This Time!"}
+  </div>
+
+  <div
+    style={{
+      fontSize: "18px",
+      fontWeight: "600",
+      marginBottom: "14px",
+    }}
+  >
+    {score >= 6
+      ? "Excellent effort — keep going!"
+      : score >= 1
+      ? "You are doing well. Keep practicing and improve further!"
+      : "Let's try again and improve next time!"}
+  </div>
+
+  {gamification && (
+    <div
+      style={{
+        fontSize: "17px",
+        fontWeight: "700",
+        lineHeight: "1.7",
+      }}
+    >
+      🏆 {getTierName(gamification.total_gold_coins)}
+      <br />
+      🪙 +{gamification.coins_awarded} Gold Coins Earned
+      <br />
+      ⭐ {gamification.total_gold_coins} Total Gold Coins
+    </div>
+  )}
+</div>
                 <div style={{ marginBottom: "12px", fontSize: "22px", fontWeight: "700" }}>
                   Sharvin Academy Result Summary
                 </div>
