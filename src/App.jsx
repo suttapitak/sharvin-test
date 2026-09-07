@@ -276,7 +276,7 @@ const data = await response.json();
       const marks = Number(q.marks || 1);
       totalMarks += marks;
 
-      if (String(answers[q.id]) === String(q.correct)) {
+      if (String(answers[q.ID]) === String(q.correct)) {
         totalScore += marks;
       }
     });
@@ -881,7 +881,7 @@ if (crossedTier) {
             </div>
 
             {questions.map((q, i) => (
-              <div key={q.id || i} style={styles.questionCard}>
+              <div key={q.ID || i} style={styles.questionCard}>
                 <h3 style={{ marginTop: 0, marginBottom: "10px" }}>
                   Q{i + 1}. {q.question}
                 </h3>
@@ -891,7 +891,7 @@ if (crossedTier) {
                 </div>
 
                 {[q.A, q.B, q.C, q.D].map((opt) => {
-                  const selectedAnswer = answers[q.id];
+                  const selectedAnswer = answers[q.ID];
                   const attemptedThisQuestion = selectedAnswer !== undefined && selectedAnswer !== "";
                   const isSelectedOption = String(selectedAnswer) === String(opt);
                   const isCorrectOption = String(q.correct) === String(opt);
@@ -933,10 +933,10 @@ if (crossedTier) {
                       <label style={{ display: "block", cursor: submitted ? "default" : "pointer" }}>
                         <input
                           type="radio"
-                          name={`question-${q.id}`}
-                          value={opt}
-                          checked={answers[q.id] === opt}
-                          onChange={() => selectAnswer(q.id, opt)}
+                          name={`question-${q.ID}`}
+value={opt}
+checked={answers[q.ID] === opt}
+onChange={() => selectAnswer(q.ID, opt)}
                           disabled={submitted}
                         />
                         {" "}{opt}
