@@ -57,14 +57,28 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
   useEffect(() => {
     async function loadFilters() {
       try {
-        const url =
-          `${API}?mode=filters` +
-          `&class=${encodeURIComponent(selectedClass)}` +
-          `&subject=${encodeURIComponent(selectedSubject)}` +
-          `&chapter=${encodeURIComponent(selectedChapter)}`;
+        const response = await fetch(
+  `${SUPABASE_URL}/rest/v1/rpc/get_filter_options`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({
+      p_class: Number(selectedClass),
+      p_subject: selectedSubject,
+      p_chapter: selectedChapter,
+    }),
+  }
+);
 
-        const response = await fetch(url);
-        const data = await response.json();
+if (!response.ok) {
+  throw new Error(await response.text());
+}
+
+const data = await response.json();
 
         const chapters = ["All Chapters", ...(data.chapters || [])];
         const concepts = ["All Concepts", ...(data.concepts || [])];
