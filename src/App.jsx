@@ -203,15 +203,38 @@ async function loadStudentDashboard() {
     setTimeLeft(getTestDurationByClass());
 
     try {
-      const url =
-        `${API}?class=${encodeURIComponent(selectedClass)}` +
-        `&subject=${encodeURIComponent(selectedSubject)}` +
-        `&chapter=${encodeURIComponent(selectedChapter)}` +
-        `&concept=${encodeURIComponent(selectedConcept)}` +
-        `&difficulty=${encodeURIComponent(selectedDifficulty)}`;
+      const params = new URLSearchParams();
 
-      const response = await fetch(url);
-      const data = await response.json();
+params.set("select", "*");
+params.set("Class", `eq.${selectedClass}`);
+params.set("Subject", `eq.${selectedSubject}`);
+
+if (selectedChapter !== "All Chapters") {
+  params.set("Chapter", `eq.${selectedChapter}`);
+}
+
+if (selectedConcept !== "All Concepts") {
+  params.set("Concept", `eq.${selectedConcept}`);
+}
+
+if (selectedDifficulty !== "All Levels") {
+  params.set("Difficulty", `eq.${selectedDifficulty}`);
+}
+
+const url = `${SUPABASE_URL}/rest/v1/questions?${params.toString()}`;
+
+const response = await fetch(url, {
+  headers: {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+  },
+});
+
+if (!response.ok) {
+  throw new Error(await response.text());
+}
+
+const data = await response.json();
 
       if (!Array.isArray(data) || data.length === 0) {
         alert("No questions available for selected filters. Please change Chapter, Concept, or Difficulty.");
