@@ -755,6 +755,65 @@ if (crossedTier) {
 >
   {dashboardLoading ? "Loading Progress..." : "View My Progress"}
 </button>
+        {dashboard && (
+  <div
+    style={{
+      marginTop: "24px",
+      padding: "22px",
+      borderRadius: "16px",
+      background: "#fff7d6",
+      border: "2px solid #d4af37",
+      color: "#146c3a",
+      fontWeight: "700",
+      fontSize: "18px",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "26px",
+        fontWeight: "800",
+        marginBottom: "14px",
+      }}
+    >
+      📊 My Progress
+    </div>
+
+    <div>👤 Student: {dashboard.student_name}</div>
+    <div>🏫 School: {dashboard.school_name}</div>
+    <div>🎓 Class: {dashboard.class_name}</div>
+    <div>🪙 Total Gold Coins: {dashboard.total_gold_coins}</div>
+    <div>✅ Tests Attempted: {dashboard.tests_attempted}</div>
+
+    <div>
+      🏆 Current Tier:{" "}
+      {dashboard.total_gold_coins < 50
+        ? "🥉 Bronze"
+        : dashboard.total_gold_coins < 100
+        ? "🥉 Bronze Pro"
+        : dashboard.total_gold_coins < 150
+        ? "🥉 Bronze Pro Max"
+        : dashboard.total_gold_coins < 200
+        ? "🥈 Silver"
+        : dashboard.total_gold_coins < 250
+        ? "🥈 Silver Pro"
+        : dashboard.total_gold_coins < 300
+        ? "🥈 Silver Pro Max"
+        : dashboard.total_gold_coins < 350
+        ? "🥇 Gold"
+        : dashboard.total_gold_coins < 400
+        ? "🥇 Gold Pro"
+        : dashboard.total_gold_coins < 450
+        ? "🥇 Gold Pro Max"
+        : dashboard.total_gold_coins < 500
+        ? "💎 Platinum"
+        : dashboard.total_gold_coins < 550
+        ? "💎 Platinum Pro"
+        : "💎 Platinum Pro Max"}
+    </div>
+
+    <div>📅 Last Test: {dashboard.last_test_date || "No test yet"}</div>
+  </div>
+)} 
           </div>
         )}
 
