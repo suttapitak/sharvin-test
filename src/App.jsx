@@ -203,32 +203,25 @@ async function loadStudentDashboard() {
     setTimeLeft(getTestDurationByClass());
 
     try {
-      const params = new URLSearchParams();
-
-params.set("select", "*");
-params.set("Class", `eq.${selectedClass}`);
-params.set("Subject", `eq.${selectedSubject}`);
-
-if (selectedChapter !== "All Chapters") {
-  params.set("Chapter", `eq.${selectedChapter}`);
-}
-
-if (selectedConcept !== "All Concepts") {
-  params.set("Concept", `eq.${selectedConcept}`);
-}
-
-if (selectedDifficulty !== "All Levels") {
-  params.set("Difficulty", `eq.${selectedDifficulty}`);
-}
-
-const url = `${SUPABASE_URL}/rest/v1/questions?${params.toString()}`;
-
-const response = await fetch(url, {
-  headers: {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-  },
-});
+     const response = await fetch(
+  `${SUPABASE_URL}/rest/v1/rpc/get_practice_questions`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({
+      p_class: Number(selectedClass),
+      p_subject: selectedSubject,
+      p_chapter: selectedChapter,
+      p_concept: selectedConcept,
+      p_difficulty: selectedDifficulty,
+      p_limit: 10,
+    }),
+  }
+);
 
 if (!response.ok) {
   throw new Error(await response.text());
@@ -240,12 +233,7 @@ const data = await response.json();
         alert("No questions available for selected filters. Please change Chapter, Concept, or Difficulty.");
         return;
       }
-
-  
-
-     const shuffledQuestions = [...data].sort(() => Math.random() - 0.5);
-const selectedQuestions = shuffledQuestions.slice(0, 10);
-setQuestions(selectedQuestions);
+    setQuestions(data);
       setStarted(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
