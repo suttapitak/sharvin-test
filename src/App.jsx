@@ -1032,21 +1032,69 @@ onChange={() => selectAnswer(q.ID, opt)}
       : "Let's try again and improve next time!"}
   </div>
 
-  {gamification && (
+  {gamification && gamification[0] && (() => {
+  const g = gamification[0];
+  const totalCoins = Number(g.total_gold_coins || 0);
+
+  let nextTierName = null;
+  let nextTierCoins = null;
+
+  if (totalCoins < 50) {
+    nextTierName = "Bronze Pro";
+    nextTierCoins = 50;
+  } else if (totalCoins < 100) {
+    nextTierName = "Bronze Pro Max";
+    nextTierCoins = 100;
+  } else if (totalCoins < 150) {
+    nextTierName = "Silver";
+    nextTierCoins = 150;
+  } else if (totalCoins < 200) {
+    nextTierName = "Silver Pro";
+    nextTierCoins = 200;
+  } else if (totalCoins < 250) {
+    nextTierName = "Silver Pro Max";
+    nextTierCoins = 250;
+  } else if (totalCoins < 300) {
+    nextTierName = "Gold";
+    nextTierCoins = 300;
+  } else if (totalCoins < 350) {
+    nextTierName = "Gold Pro";
+    nextTierCoins = 350;
+  } else if (totalCoins < 400) {
+    nextTierName = "Gold Pro Max";
+    nextTierCoins = 400;
+  } else if (totalCoins < 450) {
+    nextTierName = "Platinum";
+    nextTierCoins = 450;
+  } else if (totalCoins < 500) {
+    nextTierName = "Platinum Pro";
+    nextTierCoins = 500;
+  } else if (totalCoins < 550) {
+    nextTierName = "Platinum Pro Max";
+    nextTierCoins = 550;
+  }
+
+  return (
     <div
       style={{
-        fontSize: "17px",
+        fontSize: "18px",
         fontWeight: "700",
-        lineHeight: "1.7",
+        lineHeight: "1.8",
       }}
     >
-      🏆 {getTierName(gamification.total_gold_coins)}
+      🏆 Present Tier: {getTierName(totalCoins)}
       <br />
-      🪙 +{gamification.coins_awarded} Gold Coins Earned
+      🪙 Gold Coins Earned This Test: +{g.coins_awarded || 0}
       <br />
-      ⭐ {gamification.total_gold_coins} Total Gold Coins
+      ⭐ Total Gold Coins: {totalCoins}
+      <br />
+      ✨{" "}
+      {nextTierCoins
+        ? `You need ${nextTierCoins - totalCoins} more coins to reach ${nextTierName}`
+        : "Maximum tier achieved!"}
     </div>
-  )}
+  );
+})()}
 </div>
                 <div style={{ marginBottom: "12px", fontSize: "22px", fontWeight: "700" }}>
                   Sharvin Academy Result Summary
