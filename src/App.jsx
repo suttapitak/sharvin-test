@@ -171,8 +171,6 @@ function getTierName(coins) {
 
   return "Bronze";
 }
-
-async function loadStudentDashboard() {
 async function loadStudentDashboard() {
   if (!studentName || !parentPhone || !selectedClass) {
     alert("Please enter Student Name, Parent Mobile Number, and Class first.");
