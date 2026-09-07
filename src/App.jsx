@@ -250,7 +250,18 @@ const data = await response.json();
         alert("No questions available for selected filters. Please change Chapter, Concept, or Difficulty.");
         return;
       }
-    setQuestions(data);
+    const normalizedQuestions = data.map((q) => ({
+  ...q,
+  id: q.ID,
+  question: q.Question,
+  chapter: q.Chapter,
+  concept: q.Concept,
+  difficulty: q.Difficulty,
+  correct: q.Correct,
+  marks: q.Marks,
+}));
+
+setQuestions(normalizedQuestions);
       setStarted(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
