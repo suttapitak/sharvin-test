@@ -38,6 +38,8 @@ export default function App() {
   const [submitted, setSubmitted] = useState(false);
   const [gamification, setGamification] = useState(null);
   const [tierUp, setTierUp] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+const [dashboardLoading, setDashboardLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
 
   const [errors, setErrors] = useState({
@@ -152,7 +154,45 @@ export default function App() {
   function getTestDurationByClass() {
     return 30 * 60;
   }
+async function loadStudentDashboard() {
+  if (!studentName || !parentPhone || !selectedClass) {
+    alert("Please enter Student Name, Parent Mobile Number, and Class first.");
+    return;
+  }
 
+  setDashboardLoading(true);
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/get_student_dashboard`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_student_name: studentName,
+          p_parent_mobile: parentPhone,
+          p_class_name: selectedClass,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const data = await response.json();
+    setDashboard(data?.[0] || null);
+  } catch (error) {
+    console.error("Dashboard load failed:", error);
+    alert("Unable to load student progress.");
+  } finally {
+    setDashboardLoading(false);
+  }
+}
   async function startTest() {
     if (!validateForm()) return;
 
@@ -705,6 +745,16 @@ if (crossedTier) {
             <button onClick={startTest} disabled={loading} style={styles.buttonPrimary}>
               {loading ? "Loading Questions..." : "Start Test"}
             </button>
+         <button
+  onClick={loadStudentDashboard}
+  disabled={dashboardLoading}
+  style={{
+    ...styles.buttonSuccess,
+    marginLeft: "12px",
+  }}
+>
+  {dashboardLoading ? "Loading Progress..." : "View My Progress"}
+</button>
           </div>
         )}
 
