@@ -39,6 +39,7 @@ export default function App() {
   const [gamification, setGamification] = useState(null);
   const [tierUp, setTierUp] = useState(null);
   const [dashboard, setDashboard] = useState(null);
+  const [badges, setBadges] = useState([]);
 const [dashboardLoading, setDashboardLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -216,7 +217,31 @@ async function loadStudentDashboard() {
     }
 
     const data = await response.json();
-    setDashboard(data?.[0] || null);
+setDashboard(data?.[0] || null);
+
+const badgeResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/rpc/get_student_badges`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({
+      p_student_name: studentName,
+      p_parent_mobile: parentPhone,
+      p_class_name: selectedClass,
+    }),
+  }
+);
+
+if (!badgeResponse.ok) {
+  throw new Error(await badgeResponse.text());
+}
+
+const badgeData = await badgeResponse.json();
+setBadges(Array.isArray(badgeData) ? badgeData : []);
   } catch (error) {
     console.error("Dashboard load failed:", error);
     alert("Unable to load student progress.");
@@ -865,6 +890,52 @@ if (crossedTier) {
     </div>
 
     <div>📅 Last Test: {dashboard.last_test_date || "No test yet"}</div>
+ {badges.length > 0 && (
+  <div
+    style={{
+      marginTop: "18px",
+      paddingTop: "16px",
+      borderTop: "1px solid #d4af37",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "22px",
+        fontWeight: "800",
+        marginBottom: "12px",
+      }}
+    >
+      🏆 Achievements
+    </div>
+
+    {badges.map((badge) => (
+      <div
+        key={`${badge.badge_code}-${badge.earned_at}`}
+        style={{
+          marginBottom: "10px",
+          padding: "10px 12px",
+          background: "#ffffff",
+          borderRadius: "10px",
+          border: "1px solid #ead79a",
+        }}
+      >
+        <div style={{ fontWeight: "800" }}>
+          🏅 {badge.badge_name}
+        </div>
+
+        <div
+          style={{
+            fontSize: "14px",
+            marginTop: "3px",
+            fontWeight: "500",
+          }}
+        >
+          {badge.badge_description}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
   </div>
 )} 
           </div>
