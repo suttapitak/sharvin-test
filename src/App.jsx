@@ -998,6 +998,18 @@ if (crossedTier) {
 >
   {dashboardLoading ? "Loading Progress..." : "View My Progress"}
 </button>
+            <button
+  onClick={loadRewardStore}
+  disabled={rewardsLoading}
+  style={{
+    ...styles.buttonPrimary,
+    marginLeft: "12px",
+    background: "#d4af37",
+    color: "#102a56",
+  }}
+>
+  {rewardsLoading ? "Loading Rewards..." : "🎁 Reward Store"}
+</button>
         {dashboard && (
   <div
     style={{
@@ -1105,7 +1117,144 @@ if (crossedTier) {
 )} 
           </div>
         )}
+{rewardStoreOpen && (
+  <div
+    style={{
+      marginTop: "28px",
+      padding: "24px",
+      borderRadius: "18px",
+      background: "#fff8dc",
+      border: "2px solid #d4af37",
+      color: "#146c3a",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "18px",
+      }}
+    >
+      <div>
+        <div style={{ fontSize: "28px", fontWeight: "800" }}>
+          🎁 Sharvin Academy Reward Store
+        </div>
 
+        <div style={{ marginTop: "6px", fontSize: "18px", fontWeight: "700" }}>
+          🪙 Your Gold Coins: {dashboard?.total_gold_coins ?? 0}
+        </div>
+      </div>
+
+      <button
+        onClick={() => setRewardStoreOpen(false)}
+        style={{
+          padding: "8px 14px",
+          borderRadius: "8px",
+          border: "1px solid #999",
+          background: "#ffffff",
+          cursor: "pointer",
+          fontWeight: "700",
+        }}
+      >
+        ✕ Close
+      </button>
+    </div>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: "16px",
+      }}
+    >
+      {rewards.map((reward) => {
+        const availableCoins = Number(dashboard?.total_gold_coins || 0);
+        const rewardCost = Number(reward.coin_cost || 0);
+        const stock = Number(reward.stock_quantity || 0);
+        const canRedeem = availableCoins >= rewardCost && stock > 0;
+
+        return (
+          <div
+            key={reward.id}
+            style={{
+              background: "#ffffff",
+              border: "1px solid #ead79a",
+              borderRadius: "14px",
+              padding: "18px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "46px", marginBottom: "8px" }}>
+              🎁
+            </div>
+
+            <div
+              style={{
+                fontSize: "21px",
+                fontWeight: "800",
+                marginBottom: "8px",
+              }}
+            >
+              {reward.gift_name}
+            </div>
+
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                marginBottom: "6px",
+              }}
+            >
+              🪙 {rewardCost} Gold Coins
+            </div>
+
+            <div style={{ fontSize: "14px", marginBottom: "14px" }}>
+              {stock > 0 ? `Available: ${stock}` : "Out of Stock"}
+            </div>
+
+            <button
+              onClick={() => redeemReward(reward)}
+              disabled={!canRedeem || redeemingRewardId === reward.id}
+              style={{
+                width: "100%",
+                padding: "11px",
+                border: "none",
+                borderRadius: "9px",
+                fontWeight: "800",
+                cursor: canRedeem ? "pointer" : "not-allowed",
+                background: canRedeem ? "#1f7a3d" : "#cccccc",
+                color: "#ffffff",
+              }}
+            >
+              {redeemingRewardId === reward.id
+                ? "Processing..."
+                : canRedeem
+                ? "Redeem Gift"
+                : availableCoins < rewardCost
+                ? `Need ${rewardCost - availableCoins} More Coins`
+                : "Out of Stock"}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+
+    <div
+      style={{
+        marginTop: "20px",
+        padding: "12px",
+        background: "#eef9f1",
+        borderRadius: "10px",
+        textAlign: "center",
+        fontWeight: "700",
+      }}
+    >
+      ✅ After successful redemption, Sharvin Academy will provide your gift
+      within 24 hours.
+    </div>
+  </div>
+)}
         {started && (
           <div>
             <div
