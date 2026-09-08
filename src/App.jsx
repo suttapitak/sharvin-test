@@ -40,6 +40,10 @@ export default function App() {
   const [tierUp, setTierUp] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [badges, setBadges] = useState([]);
+  const [rewardStoreOpen, setRewardStoreOpen] = useState(false);
+const [rewards, setRewards] = useState([]);
+const [rewardsLoading, setRewardsLoading] = useState(false);
+const [redeemingRewardId, setRedeemingRewardId] = useState(null);
 const [dashboardLoading, setDashboardLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -249,6 +253,167 @@ setBadges(Array.isArray(badgeData) ? badgeData : []);
     setDashboardLoading(false);
   }
 }
+ async function loadRewardStore() {
+  if (!studentName || !parentPhone || !selectedClass) {
+    alert("Please enter Student Name, Parent Mobile Number, and Class first.");
+    return;
+  }
+
+  setRewardsLoading(true);
+
+  try {
+    const profileResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/get_student_dashboard`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_student_name: studentName,
+          p_parent_mobile: parentPhone,
+          p_class_name: selectedClass,
+        }),
+      }
+    );
+
+    if (!profileResponse.ok) {
+      throw new Error(await profileResponse.text());
+    }
+
+    const profileData = await profileResponse.json();
+    const studentProfile = profileData?.[0] || null;
+
+    if (!studentProfile) {
+      alert("Student profile not found.");
+      return;
+    }
+
+    setDashboard(studentProfile);
+
+    const rewardsResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/rewards_catalog?is_active=eq.true&order=coin_cost.asc`,
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      }
+    );
+
+    if (!rewardsResponse.ok) {
+      throw new Error(await rewardsResponse.text());
+    }
+
+    const rewardsData = await rewardsResponse.json();
+
+    setRewards(Array.isArray(rewardsData) ? rewardsData : []);
+    setRewardStoreOpen(true);
+  } catch (error) {
+    console.error("Reward store load failed:", error);
+    alert("Unable to load Reward Store.");
+  } finally {
+    setRewardsLoading(false);
+  }
+} 
+async function redeemReward(reward) {
+  if (!dashboard?.student_id) {
+    alert("Please load your progress or Reward Store first.");
+    return;
+  }
+
+  const currentCoins = Number(dashboard.total_gold_coins || 0);
+  const rewardCost = Number(reward.coin_cost || 0);
+
+  if (currentCoins < rewardCost) {
+    alert(`You need ${rewardCost - currentCoins} more Gold Coins for this reward.`);
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Redeem ${reward.gift_name} for ${rewardCost} Gold Coins?`
+  );
+
+  if (!confirmed) return;
+
+  setRedeemingRewardId(reward.id);
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/redeem_reward`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({
+          p_student_id: dashboard.student_id,
+          p_reward_id: reward.id,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const data = await response.json();
+    const result = data?.[0];
+
+    if (!result) {
+      throw new Error("No redemption result returned.");
+    }
+
+    setDashboard((prev) =>
+      prev
+        ? {
+            ...prev,
+            total_gold_coins: result.remaining_coins,
+          }
+        : prev
+    );
+
+    setRewards((prev) =>
+      prev.map((item) =>
+        item.id === reward.id
+          ? {
+              ...item,
+              stock_quantity: Math.max(
+                0,
+                Number(item.stock_quantity || 0) - 1
+              ),
+            }
+          : item
+      )
+    );
+
+    alert(
+      `🎉 Reward Redeemed Successfully!\n\n` +
+        `Gift: ${result.gift_name}\n` +
+        `Gold Coins Used: ${result.coins_spent}\n` +
+        `Remaining Gold Coins: ${result.remaining_coins}\n\n` +
+        `Your gift will be provided by Sharvin Academy within 24 hours.`
+    );
+  } catch (error) {
+    console.error("Reward redemption failed:", error);
+
+    const message = String(error?.message || "");
+
+    if (message.includes("Insufficient Gold Coins")) {
+      alert("You do not have enough Gold Coins for this reward.");
+    } else if (message.includes("out of stock")) {
+      alert("This reward is currently out of stock.");
+    } else {
+      alert("Unable to redeem this reward. Please try again.");
+    }
+  } finally {
+    setRedeemingRewardId(null);
+  }
+}  
   async function startTest() {
     if (!validateForm()) return;
 
