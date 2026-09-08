@@ -390,7 +390,24 @@ async function redeemReward(reward) {
           : item
       )
     );
-
+try {
+  await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "reward_redemption",
+      studentName: studentName,
+      className: selectedClass,
+      school: school,
+      parentPhone: parentPhone,
+      giftName: result.gift_name,
+      coinsSpent: result.coins_spent,
+      remainingCoins: result.remaining_coins,
+      redemptionId: result.redemption_id,
+    }),
+  });
+} catch (emailError) {
+  console.error("Reward redemption email failed:", emailError);
+}
     alert(
       `🎉 Reward Redeemed Successfully!\n\n` +
         `Gift: ${result.gift_name}\n` +
