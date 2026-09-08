@@ -171,7 +171,7 @@ const data = await response.json();
   }
 
   function getTestDurationByClass() {
-    return 30 * 60;
+    return 15 * 60;
   }
 function getTierName(coins) {
   const total = Number(coins || 0);
