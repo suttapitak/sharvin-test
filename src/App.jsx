@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import logo from "./assets/logo.jpg";
-
+import AdminQuestions from "./AdminQuestions.jsx";
 const API = "https://script.google.com/macros/s/AKfycbwwxw-TEHqb5yuv2B1nGGpgg0SIsQQ8hOCzOUY81I12txi3PmM9tLsJ1GLR9O-aeAwe/exec";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -17,6 +17,9 @@ const SUBJECT_OPTIONS = [
 ];
 
 export default function App() {
+    if (window.location.pathname === "/admin") {
+    return <AdminQuestions />;
+  }
   const [studentName, setStudentName] = useState("");
   const [school, setSchool] = useState("");
   const [parentPhone, setParentPhone] = useState("");
