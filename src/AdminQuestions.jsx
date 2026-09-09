@@ -75,7 +75,15 @@ export default function AdminQuestions() {
   const [errors, setErrors] = useState([]);
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState("");
-
+const [aiClass, setAiClass] = useState("7");
+const [aiSubject, setAiSubject] = useState("");
+const [aiChapter, setAiChapter] = useState("");
+const [aiBoard, setAiBoard] = useState("CBSE");
+const [aiQuestionCount, setAiQuestionCount] = useState("3");
+const [aiSourceText, setAiSourceText] = useState("");
+const [aiQuestions, setAiQuestions] = useState([]);
+const [aiGenerating, setAiGenerating] = useState(false);
+const [aiError, setAiError] = useState("");
   function resetImport() {
     setFileName("");
     setQuestions([]);
@@ -286,7 +294,64 @@ export default function AdminQuestions() {
       setImporting(false);
     }
   }
+async function handleGenerateQuestions() {
+  setAiError("");
+  setAiQuestions([]);
 
+  if (!adminSecret.trim()) {
+    setAiError("Enter the Admin Import Secret first.");
+    return;
+  }
+
+  if (!aiClass || !aiSubject.trim() || !aiChapter.trim()) {
+    setAiError("Class, Subject and Chapter are required.");
+    return;
+  }
+
+  if (!aiSourceText.trim()) {
+    setAiError("Paste the textbook or chapter content first.");
+    return;
+  }
+
+  const count = Number(aiQuestionCount);
+
+  if (!Number.isInteger(count) || count < 1 || count > 50) {
+    setAiError("Question count must be between 1 and 50.");
+    return;
+  }
+
+  setAiGenerating(true);
+
+  try {
+    const response = await fetch("/api/generate-questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-secret": adminSecret,
+      },
+      body: JSON.stringify({
+        classNumber: Number(aiClass),
+        subject: aiSubject.trim(),
+        chapter: aiChapter.trim(),
+        board: aiBoard.trim(),
+        questionCount: count,
+        sourceText: aiSourceText.trim(),
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Unable to generate questions.");
+    }
+
+    setAiQuestions(data.questions || []);
+  } catch (error) {
+    setAiError(error?.message || "Unable to generate questions.");
+  } finally {
+    setAiGenerating(false);
+  }
+}
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -316,6 +381,165 @@ export default function AdminQuestions() {
 
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>
+            <div style={styles.card}>
+  <h2 style={styles.cardTitle}>
+    Generate Questions with AI
+  </h2>
+
+  <label style={styles.label}>Class</label>
+  <input
+    type="number"
+    min="1"
+    max="12"
+    value={aiClass}
+    onChange={(e) => setAiClass(e.target.value)}
+    style={styles.input}
+  />
+
+  <div style={{ height: "14px" }} />
+
+  <label style={styles.label}>Subject</label>
+  <input
+    type="text"
+    value={aiSubject}
+    onChange={(e) => setAiSubject(e.target.value)}
+    placeholder="Example: Science"
+    style={styles.input}
+  />
+
+  <div style={{ height: "14px" }} />
+
+  <label style={styles.label}>Chapter</label>
+  <input
+    type="text"
+    value={aiChapter}
+    onChange={(e) => setAiChapter(e.target.value)}
+    placeholder="Example: Earth, Moon, and the Sun"
+    style={styles.input}
+  />
+
+  <div style={{ height: "14px" }} />
+
+  <label style={styles.label}>Board</label>
+  <input
+    type="text"
+    value={aiBoard}
+    onChange={(e) => setAiBoard(e.target.value)}
+    placeholder="Example: CBSE"
+    style={styles.input}
+  />
+
+  <div style={{ height: "14px" }} />
+
+  <label style={styles.label}>Number of Questions</label>
+  <input
+    type="number"
+    min="1"
+    max="50"
+    value={aiQuestionCount}
+    onChange={(e) => setAiQuestionCount(e.target.value)}
+    style={styles.input}
+  />
+
+  <div style={{ height: "14px" }} />
+
+  <label style={styles.label}>
+    Textbook / Chapter Content
+  </label>
+
+  <textarea
+    value={aiSourceText}
+    onChange={(e) => setAiSourceText(e.target.value)}
+    placeholder="Paste the textbook or chapter content here..."
+    rows={12}
+    style={{
+      ...styles.input,
+      resize: "vertical",
+      minHeight: "220px",
+      fontFamily: "inherit",
+    }}
+  />
+
+  <div style={{ height: "18px" }} />
+
+  <button
+    type="button"
+    onClick={handleGenerateQuestions}
+    disabled={aiGenerating}
+    style={styles.button}
+  >
+    {aiGenerating
+      ? "Generating Questions..."
+      : "Generate Questions"}
+  </button>
+
+  {aiError && (
+    <div
+      style={{
+        marginTop: "18px",
+        padding: "12px",
+        borderRadius: "8px",
+        background: "#fee2e2",
+        color: "#991b1b",
+      }}
+    >
+      {aiError}
+    </div>
+  )}
+
+  {aiQuestions.length > 0 && (
+    <div style={{ marginTop: "24px" }}>
+      <h3>
+        Generated Questions ({aiQuestions.length})
+      </h3>
+
+      {aiQuestions.map((q, index) => (
+        <div
+          key={index}
+          style={{
+            marginTop: "16px",
+            padding: "16px",
+            border: "1px solid #d1d5db",
+            borderRadius: "10px",
+          }}
+        >
+          <strong>
+            {index + 1}. {q.Question}
+          </strong>
+
+          <div style={{ marginTop: "10px" }}>
+            A. {q.A}
+          </div>
+          <div>B. {q.B}</div>
+          <div>C. {q.C}</div>
+          <div>D. {q.D}</div>
+
+          <div style={{ marginTop: "10px" }}>
+            <strong>Correct:</strong> {q.Correct}
+          </div>
+
+          <div>
+            <strong>Difficulty:</strong>{" "}
+            {q.Difficulty}
+          </div>
+
+          <div>
+            <strong>Concept:</strong> {q.Concept}
+          </div>
+
+          <div style={{ marginTop: "6px" }}>
+            <strong>Explanation:</strong>{" "}
+            {q.Explaination}
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+<div style={{ height: "24px" }} />
+            <div style={styles.card}>
+  <h2 style={styles.cardTitle}>
             Bulk Upload CSV
           </h2>
 
