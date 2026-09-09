@@ -101,10 +101,10 @@ const [aiSourceFileType, setAiSourceFileType] = useState("");
     return;
   }
 
-  const maxSize = 10 * 1024 * 1024;
+  const maxSize = 3 * 1024 * 1024;
 
   if (file.size > maxSize) {
-    setAiError("File must be smaller than 10 MB.");
+    setAiError("File must be smaller than 3 MB.");
     return;
   }
 
