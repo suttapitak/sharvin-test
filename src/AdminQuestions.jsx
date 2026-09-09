@@ -81,14 +81,39 @@ const [aiChapter, setAiChapter] = useState("");
 const [aiBoard, setAiBoard] = useState("CBSE");
 const [aiQuestionCount, setAiQuestionCount] = useState("3");
 const [aiSourceText, setAiSourceText] = useState("");
-  const [aiSourceFile, setAiSourceFile] = useState(null);
-const [aiSourceFileData, setAiSourceFileData] = useState("");
-const [aiSourceFileName, setAiSourceFileName] = useState("");
-const [aiSourceFileType, setAiSourceFileType] = useState("");
-  async function handleAiSourceFile(event) {
-  const file = event.target.files?.[0];
+  const [aiSourceFiles, setAiSourceFiles] = useState([]);
+const [aiUploadedSources, setAiUploadedSources] = useState([]);
+const [aiUploadingFiles, setAiUploadingFiles] = useState(false);
+const [aiUploadProgress, setAiUploadProgress] = useState("");
+const [selectedAiQuestions, setSelectedAiQuestions] = useState([]);
 
-  if (!file) return;
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Unable to read file."));
+
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleAiSourceFiles(event) {
+  const files = Array.from(event.target.files || []);
+
+  if (!files.length) return;
+
+  if (!aiPasswordVerified) {
+    setAiError("Please verify the Admin Password before selecting files.");
+    event.target.value = "";
+    return;
+  }
+
+  if (files.length > 10) {
+    setAiError("You can upload a maximum of 10 files at one time.");
+    event.target.value = "";
+    return;
+  }
 
   const allowedTypes = [
     "application/pdf",
@@ -96,34 +121,81 @@ const [aiSourceFileType, setAiSourceFileType] = useState("");
     "image/png",
   ];
 
-  if (!allowedTypes.includes(file.type)) {
-    setAiError("Only PDF, JPG, JPEG and PNG files are allowed.");
-    return;
-  }
+  for (const file of files) {
+    if (!allowedTypes.includes(file.type)) {
+      setAiError(
+        `${file.name}: Only PDF, JPG, JPEG and PNG files are allowed.`
+      );
+      event.target.value = "";
+      return;
+    }
 
-  const maxSize = 3 * 1024 * 1024;
+    const maxFileSize = 2.5 * 1024 * 1024;
 
-  if (file.size > maxSize) {
-    setAiError("File must be smaller than 3 MB.");
-    return;
+    if (file.size > maxFileSize) {
+      setAiError(
+        `${file.name}: Each file must currently be smaller than 2.5 MB.`
+      );
+      event.target.value = "";
+      return;
+    }
   }
 
   setAiError("");
-  setAiSourceFile(file);
-  setAiSourceFileName(file.name);
-  setAiSourceFileType(file.type);
+  setAiSourceFiles(files);
+  setAiUploadedSources([]);
+  setAiUploadingFiles(true);
+  setAiUploadProgress(`Uploading 0 of ${files.length} files...`);
 
-  const reader = new FileReader();
+  try {
+    const uploaded = [];
 
-  reader.onload = () => {
-    setAiSourceFileData(reader.result || "");
-  };
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
 
-  reader.onerror = () => {
-    setAiError("Unable to read the selected file.");
-  };
+      setAiUploadProgress(
+        `⏳ Uploading ${i + 1} of ${files.length}: ${file.name}`
+      );
 
-  reader.readAsDataURL(file);
+      const fileData = await readFileAsDataURL(file);
+
+      const response = await fetch("/api/upload-ai-source", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-secret": aiAdminPassword,
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileData,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || `Unable to upload ${file.name}.`
+        );
+      }
+
+      uploaded.push(data.file);
+      setAiUploadedSources([...uploaded]);
+    }
+
+    setAiUploadProgress(
+      `✅ ${uploaded.length} source files uploaded and ready.`
+    );
+  } catch (error) {
+    setAiUploadedSources([]);
+    setAiError(
+      error?.message || "Unable to upload source files."
+    );
+    setAiUploadProgress("");
+  } finally {
+    setAiUploadingFiles(false);
+  }
 }
 const [aiQuestions, setAiQuestions] = useState([]);
 const [aiGenerating, setAiGenerating] = useState(false);
@@ -424,8 +496,8 @@ async function handleGenerateQuestions() {
     return;
   }
 
-if (!aiSourceText.trim() && !aiSourceFileData) {
-  setAiError("Paste textbook content or upload a PDF/JPG/PNG file first.");
+if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
+  setAiError("Paste textbook content or upload PDF/JPG/PNG source files first.");
   return;
 }
 
@@ -452,9 +524,7 @@ if (!aiSourceText.trim() && !aiSourceFileData) {
         board: aiBoard.trim(),
         questionCount: count,
         sourceText: aiSourceText.trim(),
-        sourceFileData: aiSourceFileData,
-sourceFileName: aiSourceFileName,
-sourceFileType: aiSourceFileType,
+        sourceFiles: aiUploadedSources,
       }),
     });
 
@@ -465,6 +535,9 @@ sourceFileType: aiSourceFileType,
     }
 
     setAiQuestions(data.questions || []);
+    setSelectedAiQuestions(
+  (data.questions || []).map((_, index) => index)
+);
   } catch (error) {
     setAiError(error?.message || "Unable to generate questions.");
   } finally {
@@ -642,13 +715,36 @@ sourceFileType: aiSourceFileType,
 
 <input
   type="file"
+  multiple
   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-  onChange={handleAiSourceFile}
+  onChange={handleAiSourceFiles}
+  disabled={aiUploadingFiles}
 />
 
-{aiSourceFileName && (
-  <div style={{ marginTop: "8px", fontWeight: "600" }}>
-    Selected file: {aiSourceFileName}
+{aiSourceFiles.length > 0 && (
+  <div style={{ marginTop: "10px" }}>
+    <strong>Selected source files ({aiSourceFiles.length}):</strong>
+
+    {aiSourceFiles.map((file, index) => (
+      <div key={`${file.name}-${index}`} style={{ marginTop: "4px" }}>
+        {index + 1}. {file.name}{" "}
+        ({(file.size / 1024 / 1024).toFixed(2)} MB)
+      </div>
+    ))}
+  </div>
+)}
+
+{aiUploadProgress && (
+  <div
+    style={{
+      marginTop: "12px",
+      fontWeight: "600",
+      color: aiUploadProgress.startsWith("✅")
+        ? "#166534"
+        : "#1e3a8a",
+    }}
+  >
+    {aiUploadProgress}
   </div>
 )}
   <div style={{ height: "18px" }} />
@@ -656,12 +752,14 @@ sourceFileType: aiSourceFileType,
   <button
     type="button"
     onClick={handleGenerateQuestions}
-    disabled={aiGenerating}
+   disabled={aiGenerating || aiUploadingFiles}
     style={styles.button}
   >
-    {aiGenerating
-      ? "Generating Questions..."
-      : "Generate Questions"}
+    {aiUploadingFiles
+  ? "⏳ Uploading Source Files..."
+  : aiGenerating
+    ? `⏳ Generating ${aiQuestionCount} Questions...`
+    : "Generate Questions"}
   </button>
 
   {aiError && (
@@ -679,53 +777,110 @@ sourceFileType: aiSourceFileType,
   )}
 
   {aiQuestions.length > 0 && (
-    <div style={{ marginTop: "24px" }}>
-      <h3>
-        Generated Questions ({aiQuestions.length})
-      </h3>
+  <div style={{ marginTop: "24px" }}>
+    <h3>
+      Generated Questions ({aiQuestions.length})
+    </h3>
 
-      {aiQuestions.map((q, index) => (
+    <div
+      style={{
+        display: "flex",
+        gap: "10px",
+        alignItems: "center",
+        flexWrap: "wrap",
+        marginBottom: "14px",
+      }}
+    >
+      <strong>
+        Selected: {selectedAiQuestions.length} of {aiQuestions.length}
+      </strong>
+
+      <button
+        type="button"
+        onClick={() =>
+          setSelectedAiQuestions(
+            aiQuestions.map((_, index) => index)
+          )
+        }
+        style={styles.button}
+      >
+        Select All
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setSelectedAiQuestions([])}
+        style={styles.button}
+      >
+        Deselect All
+      </button>
+    </div>
+
+    {aiQuestions.map((q, index) => (
+      <div
+        key={index}
+        style={{
+          marginTop: "16px",
+          padding: "16px",
+          border: "1px solid #d1d5db",
+          borderRadius: "10px",
+        }}
+      >
         <div
-          key={index}
           style={{
-            marginTop: "16px",
-            padding: "16px",
-            border: "1px solid #d1d5db",
-            borderRadius: "10px",
+            marginBottom: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
           }}
         >
-          <strong>
-            {index + 1}. {q.Question}
-          </strong>
+          <input
+            type="checkbox"
+            checked={selectedAiQuestions.includes(index)}
+            onChange={() => {
+              setSelectedAiQuestions((current) =>
+                current.includes(index)
+                  ? current.filter((item) => item !== index)
+                  : [...current, index]
+              );
+            }}
+          />
 
-          <div style={{ marginTop: "10px" }}>
-            A. {q.A}
-          </div>
-          <div>B. {q.B}</div>
-          <div>C. {q.C}</div>
-          <div>D. {q.D}</div>
-
-          <div style={{ marginTop: "10px" }}>
-            <strong>Correct:</strong> {q.Correct}
-          </div>
-
-          <div>
-            <strong>Difficulty:</strong>{" "}
-            {q.Difficulty}
-          </div>
-
-          <div>
-            <strong>Concept:</strong> {q.Concept}
-          </div>
-
-          <div style={{ marginTop: "6px" }}>
-            <strong>Explanation:</strong>{" "}
-            {q.Explaination}
-          </div>
+          <strong>Include this question</strong>
         </div>
-      ))}
-    </div>
-  )}
+
+        <strong>
+          {index + 1}. {q.Question}
+        </strong>
+
+        <div style={{ marginTop: "10px" }}>
+          A. {q.A}
+        </div>
+        <div>B. {q.B}</div>
+        <div>C. {q.C}</div>
+        <div>D. {q.D}</div>
+
+        <div style={{ marginTop: "10px" }}>
+          <strong>Correct:</strong> {q.Correct}
+        </div>
+
+        <div>
+          <strong>Difficulty:</strong>{" "}
+          {q.Difficulty}
+        </div>
+
+        <div>
+          <strong>Concept:</strong> {q.Concept}
+        </div>
+
+        <div style={{ marginTop: "6px" }}>
+          <strong>Explanation:</strong>{" "}
+          {q.Explaination}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
 </div>
 
 <div style={{ height: "24px" }} />
