@@ -379,8 +379,8 @@ async function handleGenerateQuestions() {
           questions before importing.
         </div>
 
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>
+        
+         
             <div style={styles.card}>
   <h2 style={styles.cardTitle}>
     Generate Questions with AI
