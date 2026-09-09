@@ -84,6 +84,78 @@ const [aiSourceText, setAiSourceText] = useState("");
 const [aiQuestions, setAiQuestions] = useState([]);
 const [aiGenerating, setAiGenerating] = useState(false);
 const [aiError, setAiError] = useState("");
+    // Separate Admin Password controls for AI Generator
+  const [aiAdminPassword, setAiAdminPassword] = useState("");
+  const [showAiPassword, setShowAiPassword] = useState(false);
+  const [aiPasswordVerified, setAiPasswordVerified] = useState(false);
+  const [aiPasswordChecking, setAiPasswordChecking] = useState(false);
+  const [aiPasswordMessage, setAiPasswordMessage] = useState("");
+
+  // Separate Admin Password controls for CSV Upload
+  const [csvAdminPassword, setCsvAdminPassword] = useState("");
+  const [showCsvPassword, setShowCsvPassword] = useState(false);
+  const [csvPasswordVerified, setCsvPasswordVerified] = useState(false);
+  const [csvPasswordChecking, setCsvPasswordChecking] = useState(false);
+  const [csvPasswordMessage, setCsvPasswordMessage] = useState("");
+  async function verifyAdminPassword(type) {
+  const isAI = type === "ai";
+
+  const password = isAI
+    ? aiAdminPassword
+    : csvAdminPassword;
+
+  const setChecking = isAI
+    ? setAiPasswordChecking
+    : setCsvPasswordChecking;
+
+  const setVerified = isAI
+    ? setAiPasswordVerified
+    : setCsvPasswordVerified;
+
+  const setPasswordMessage = isAI
+    ? setAiPasswordMessage
+    : setCsvPasswordMessage;
+
+  if (!password.trim()) {
+    setVerified(false);
+    setPasswordMessage("Please enter Admin Password.");
+    return;
+  }
+
+  setChecking(true);
+  setVerified(false);
+  setPasswordMessage("");
+
+  try {
+    const response = await fetch("/api/verify-admin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-secret": password,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      setVerified(false);
+      setPasswordMessage(
+        data.error || "Incorrect Admin Password."
+      );
+      return;
+    }
+
+    setVerified(true);
+    setPasswordMessage("Admin Password verified.");
+  } catch (error) {
+    setVerified(false);
+    setPasswordMessage(
+      error?.message || "Unable to verify password."
+    );
+  } finally {
+    setChecking(false);
+  }
+}
   function resetImport() {
     setFileName("");
     setQuestions([]);
@@ -298,10 +370,10 @@ async function handleGenerateQuestions() {
   setAiError("");
   setAiQuestions([]);
 
-  if (!adminSecret.trim()) {
-    setAiError("Enter the Admin Import Secret first.");
-    return;
-  }
+  if (!aiPasswordVerified) {
+  setAiError("Please verify the Admin Password first.");
+  return;
+}
 
   if (!aiClass || !aiSubject.trim() || !aiChapter.trim()) {
     setAiError("Class, Subject and Chapter are required.");
@@ -327,7 +399,7 @@ async function handleGenerateQuestions() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-secret": adminSecret,
+       "x-admin-secret": aiAdminPassword,
       },
       body: JSON.stringify({
         classNumber: Number(aiClass),
@@ -385,7 +457,63 @@ async function handleGenerateQuestions() {
   <h2 style={styles.cardTitle}>
     Generate Questions with AI
   </h2>
+<label style={styles.label}>Admin Password</label>
 
+<div
+  style={{
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+  }}
+>
+  <input
+    type={showAiPassword ? "text" : "password"}
+    value={aiAdminPassword}
+    onChange={(e) => {
+      setAiAdminPassword(e.target.value);
+      setAiPasswordVerified(false);
+      setAiPasswordMessage("");
+    }}
+    placeholder="Enter Admin Password"
+    autoComplete="off"
+    style={{
+      ...styles.input,
+      flex: 1,
+    }}
+  />
+
+  <button
+    type="button"
+    onClick={() => setShowAiPassword(!showAiPassword)}
+    style={styles.button}
+  >
+    {showAiPassword ? "Hide" : "View"}
+  </button>
+
+  <button
+    type="button"
+    onClick={() => verifyAdminPassword("ai")}
+    disabled={aiPasswordChecking}
+    style={styles.button}
+  >
+    {aiPasswordChecking ? "⏳ Checking..." : "Enter"}
+  </button>
+</div>
+
+{aiPasswordMessage && (
+  <div
+    style={{
+      marginTop: "10px",
+      fontWeight: "600",
+      color: aiPasswordVerified ? "#166534" : "#991b1b",
+    }}
+  >
+    {aiPasswordVerified ? "✅ " : "❌ "}
+    {aiPasswordMessage}
+  </div>
+)}
+
+<div style={{ height: "18px" }} />
   <label style={styles.label}>Class</label>
   <input
     type="number"
