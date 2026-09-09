@@ -81,6 +81,50 @@ const [aiChapter, setAiChapter] = useState("");
 const [aiBoard, setAiBoard] = useState("CBSE");
 const [aiQuestionCount, setAiQuestionCount] = useState("3");
 const [aiSourceText, setAiSourceText] = useState("");
+  const [aiSourceFile, setAiSourceFile] = useState(null);
+const [aiSourceFileData, setAiSourceFileData] = useState("");
+const [aiSourceFileName, setAiSourceFileName] = useState("");
+const [aiSourceFileType, setAiSourceFileType] = useState("");
+  async function handleAiSourceFile(event) {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  const allowedTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    setAiError("Only PDF, JPG, JPEG and PNG files are allowed.");
+    return;
+  }
+
+  const maxSize = 10 * 1024 * 1024;
+
+  if (file.size > maxSize) {
+    setAiError("File must be smaller than 10 MB.");
+    return;
+  }
+
+  setAiError("");
+  setAiSourceFile(file);
+  setAiSourceFileName(file.name);
+  setAiSourceFileType(file.type);
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    setAiSourceFileData(reader.result || "");
+  };
+
+  reader.onerror = () => {
+    setAiError("Unable to read the selected file.");
+  };
+
+  reader.readAsDataURL(file);
+}
 const [aiQuestions, setAiQuestions] = useState([]);
 const [aiGenerating, setAiGenerating] = useState(false);
 const [aiError, setAiError] = useState("");
@@ -380,10 +424,10 @@ async function handleGenerateQuestions() {
     return;
   }
 
-  if (!aiSourceText.trim()) {
-    setAiError("Paste the textbook or chapter content first.");
-    return;
-  }
+if (!aiSourceText.trim() && !aiSourceFileData) {
+  setAiError("Paste textbook content or upload a PDF/JPG/PNG file first.");
+  return;
+}
 
   const count = Number(aiQuestionCount);
 
@@ -408,6 +452,9 @@ async function handleGenerateQuestions() {
         board: aiBoard.trim(),
         questionCount: count,
         sourceText: aiSourceText.trim(),
+        sourceFileData: aiSourceFileData,
+sourceFileName: aiSourceFileName,
+sourceFileType: aiSourceFileType,
       }),
     });
 
@@ -587,7 +634,23 @@ async function handleGenerateQuestions() {
       fontFamily: "inherit",
     }}
   />
+<div style={{ height: "14px" }} />
 
+<label style={styles.label}>
+  Or Upload Textbook / Chapter File
+</label>
+
+<input
+  type="file"
+  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+  onChange={handleAiSourceFile}
+/>
+
+{aiSourceFileName && (
+  <div style={{ marginTop: "8px", fontWeight: "600" }}>
+    Selected file: {aiSourceFileName}
+  </div>
+)}
   <div style={{ height: "18px" }} />
 
   <button
