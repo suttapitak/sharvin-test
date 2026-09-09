@@ -27,27 +27,30 @@ export default async function handler(req, res) {
 
   try {
     const {
-      classNumber,
-      subject,
-      chapter,
-      board,
-      questionCount,
-      sourceText,
-    } = req.body || {};
+  classNumber,
+  subject,
+  chapter,
+  board,
+  questionCount,
+  sourceText,
+  sourceFileData,
+  sourceFileName,
+  sourceFileType,
+} = req.body || {};
 
     if (
-      !classNumber ||
-      !subject ||
-      !chapter ||
-      !questionCount ||
-      !sourceText
-    ) {
-      return res.status(400).json({
-        success: false,
-        error:
-          "Class, subject, chapter, question count and source text are required.",
-      });
-    }
+  !classNumber ||
+  !subject ||
+  !chapter ||
+  !questionCount ||
+  (!sourceText && !sourceFileData)
+) {
+  return res.status(400).json({
+    success: false,
+    error:
+      "Class, subject, chapter, question count and source material are required.",
+  });
+}
 
     const count = Number(questionCount);
 
@@ -101,7 +104,37 @@ QUESTION QUALITY RULES
 14. Concept should identify the specific concept tested.
 15. Do not number questions inside the Question field.
 `;
+const inputContent = [
+  {
+    type: "input_text",
+    text: prompt,
+  },
+];
 
+if (sourceFileData) {
+  if (
+    sourceFileType === "image/jpeg" ||
+    sourceFileType === "image/png"
+  ) {
+    inputContent.push({
+      type: "input_image",
+      image_url: sourceFileData,
+    });
+  } else if (sourceFileType === "application/pdf") {
+    inputContent.push({
+      type: "input_file",
+      filename: sourceFileName || "textbook.pdf",
+      file_data: sourceFileData,
+    });
+  }
+}
+
+const openAIInput = [
+  {
+    role: "user",
+    content: inputContent,
+  },
+];
     const openAIResponse = await fetch(
       "https://api.openai.com/v1/responses",
       {
@@ -112,7 +145,7 @@ QUESTION QUALITY RULES
         },
         body: JSON.stringify({
           model: "gpt-5.6-luna",
-          input: prompt,
+          input: openAIInput,
           reasoning: {
             effort: "low",
           },
