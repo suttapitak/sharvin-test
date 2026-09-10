@@ -545,6 +545,82 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
     setAiGenerating(false);
   }
 }
+  async function handleAddSelectedAiQuestions() {
+  setAiSaveMessage("");
+
+  if (!aiPasswordVerified) {
+    setAiSaveMessage("❌ Please verify the Admin Password first.");
+    return;
+  }
+
+  if (selectedAiQuestions.length === 0) {
+    setAiSaveMessage("❌ Select at least one question to add.");
+    return;
+  }
+
+  const questionsToAdd = selectedAiQuestions.map((index) => {
+    const q = aiQuestions[index];
+
+    return {
+      ...q,
+      ID: crypto.randomUUID(),
+      Q: Number(q.Q || index + 1),
+      Class: Number(q.Class || aiClass),
+      Subject: String(q.Subject || aiSubject).trim(),
+      Chapter: String(q.Chapter || aiChapter).trim(),
+      Board: String(q.Board || aiBoard).trim(),
+      Marks: Number(q.Marks || 1),
+      Correct: String(q.Correct || "").trim().toUpperCase(),
+      Source: q.Source || "Sharvin Academy AI Generator",
+    };
+  });
+
+  const confirmed = window.confirm(
+    `Add ${questionsToAdd.length} selected question(s) to the live Sharvin Academy question bank?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setAiSavingQuestions(true);
+    setAiSaveMessage(
+      `⏳ Adding ${questionsToAdd.length} question(s) to the live question bank...`
+    );
+
+    const response = await fetch("/api/import-questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-secret": aiAdminPassword.trim(),
+      },
+      body: JSON.stringify({
+        questions: questionsToAdd,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result?.details?.message ||
+          result?.error ||
+          "Unable to add selected questions."
+      );
+    }
+
+    setAiSaveMessage(
+      `✅ ${result.inserted} question(s) successfully added to the live question bank.`
+    );
+
+    setSelectedAiQuestions([]);
+  } catch (error) {
+    setAiSaveMessage(
+      `❌ ${error?.message || "Unable to add selected questions."}`
+    );
+  } finally {
+    setAiSavingQuestions(false);
+  }
+}
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -816,7 +892,33 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
         Deselect All
       </button>
     </div>
+<div
+  style={{
+    marginBottom: "16px",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    flexWrap: "wrap",
+  }}
+>
+  <button
+    type="button"
+    onClick={handleAddSelectedAiQuestions}
+    disabled={
+      aiSavingQuestions ||
+      selectedAiQuestions.length === 0
+    }
+    style={styles.button}
+  >
+    {aiSavingQuestions
+      ? "⏳ Adding Questions..."
+      : `Add Selected Questions (${selectedAiQuestions.length})`}
+  </button>
 
+  {aiSaveMessage && (
+    <strong>{aiSaveMessage}</strong>
+  )}
+</div>
     {aiQuestions.map((q, index) => (
       <div
         key={index}
