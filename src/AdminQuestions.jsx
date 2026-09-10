@@ -86,7 +86,8 @@ const [aiUploadedSources, setAiUploadedSources] = useState([]);
 const [aiUploadingFiles, setAiUploadingFiles] = useState(false);
 const [aiUploadProgress, setAiUploadProgress] = useState("");
 const [selectedAiQuestions, setSelectedAiQuestions] = useState([]);
-
+const [aiSavingQuestions, setAiSavingQuestions] = useState(false);
+const [aiSaveMessage, setAiSaveMessage] = useState("");
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
