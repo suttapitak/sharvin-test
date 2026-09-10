@@ -26,24 +26,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const {
+   const {
   classNumber,
   subject,
   chapter,
   board,
   questionCount,
   sourceText,
-  sourceFileData,
-  sourceFileName,
-  sourceFileType,
+  sourceFiles,
 } = req.body || {};
 
-    if (
+if (
   !classNumber ||
   !subject ||
   !chapter ||
   !questionCount ||
-  (!sourceText && !sourceFileData)
+  (!String(sourceText || "").trim() &&
+    (!Array.isArray(sourceFiles) || sourceFiles.length === 0))
 ) {
   return res.status(400).json({
     success: false,
@@ -111,20 +110,13 @@ const inputContent = [
   },
 ];
 
-if (sourceFileData) {
-  if (
-    sourceFileType === "image/jpeg" ||
-    sourceFileType === "image/png"
-  ) {
-    inputContent.push({
-      type: "input_image",
-      image_url: sourceFileData,
-    });
-  } else if (sourceFileType === "application/pdf") {
+if (Array.isArray(sourceFiles) && sourceFiles.length > 0) {
+  for (const sourceFile of sourceFiles) {
+    if (!sourceFile?.id) continue;
+
     inputContent.push({
       type: "input_file",
-      filename: sourceFileName || "textbook.pdf",
-      file_data: sourceFileData,
+      file_id: sourceFile.id,
     });
   }
 }
