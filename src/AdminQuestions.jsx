@@ -473,10 +473,10 @@ const [aiError, setAiError] = useState("");
   async function importQuestions() {
     setMessage("");
 
-    if (!adminSecret.trim()) {
-      setErrors(["Enter the Admin Import Secret first."]);
-      return;
-    }
+if (!csvPasswordVerified) {
+  setErrors(["Please verify the Admin Password first."]);
+  return;
+}
 
     if (questions.length === 0) {
       setErrors(["No questions are ready for import."]);
@@ -504,7 +504,7 @@ const [aiError, setAiError] = useState("");
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": adminSecret.trim(),
+       "x-admin-secret": csvAdminPassword.trim(),
         },
         body: JSON.stringify({
           questions,
@@ -1082,19 +1082,62 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
           </h2>
 
           <label style={styles.label}>
-            Admin Import Secret
-          </label>
+  Admin Password
+</label>
 
-          <input
-            type="password"
-            value={adminSecret}
-            onChange={(e) =>
-              setAdminSecret(e.target.value)
-            }
-            placeholder="Enter admin secret"
-            autoComplete="off"
-            style={styles.input}
-          />
+<div
+  style={{
+    display: "flex",
+    gap: "8px",
+    alignItems: "center",
+    flexWrap: "wrap",
+  }}
+>
+  <input
+    type={showCsvPassword ? "text" : "password"}
+    value={csvAdminPassword}
+    onChange={(e) => {
+      setCsvAdminPassword(e.target.value);
+      setCsvPasswordVerified(false);
+      setCsvPasswordMessage("");
+    }}
+    placeholder="Enter Admin Password"
+    autoComplete="off"
+    style={styles.input}
+  />
+
+  <button
+    type="button"
+    onClick={() =>
+      setShowCsvPassword((current) => !current)
+    }
+  >
+    {showCsvPassword ? "Hide" : "View"}
+  </button>
+
+  <button
+    type="button"
+    onClick={() => verifyAdminPassword("csv")}
+    disabled={csvPasswordChecking}
+  >
+    {csvPasswordChecking ? "Checking..." : "Enter"}
+  </button>
+</div>
+
+{csvPasswordMessage && (
+  <div
+    style={{
+      marginTop: "8px",
+      fontWeight: "600",
+      color: csvPasswordVerified
+        ? "#166534"
+        : "#991b1b",
+    }}
+  >
+    {csvPasswordVerified ? "✅ " : "❌ "}
+    {csvPasswordMessage}
+  </div>
+)}
 
           <div style={{ height: "18px" }} />
 
