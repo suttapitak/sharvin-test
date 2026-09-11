@@ -897,7 +897,8 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
     </button>
   </div>
 ))}
-
+</div>
+)}
 {aiUploadProgress && (
   <div
     style={{
