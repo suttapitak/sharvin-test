@@ -855,13 +855,48 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
     <strong>Selected source files ({aiSourceFiles.length}):</strong>
 
     {aiSourceFiles.map((file, index) => (
-      <div key={`${file.name}-${index}`} style={{ marginTop: "4px" }}>
-        {index + 1}. {file.name}{" "}
-        ({(file.size / 1024 / 1024).toFixed(2)} MB)
-      </div>
-    ))}
+  <div
+    key={`${file.name}-${index}`}
+    style={{
+      marginTop: "6px",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      flexWrap: "wrap",
+    }}
+  >
+    <span>
+      {index + 1}. {file.name}{" "}
+      ({(file.size / 1024 / 1024).toFixed(2)} MB)
+    </span>
+
+    <button
+      type="button"
+      disabled={aiUploadingFiles || aiGenerating}
+      onClick={() => {
+        setAiSourceFiles((current) =>
+          current.filter((_, itemIndex) => itemIndex !== index)
+        );
+
+        setAiUploadedSources((current) =>
+          current.filter((_, itemIndex) => itemIndex !== index)
+        );
+
+        const remainingCount = aiSourceFiles.length - 1;
+
+        setAiUploadProgress(
+          remainingCount > 0
+            ? `✅ ${remainingCount} source file(s) uploaded and ready.`
+            : ""
+        );
+
+        setAiError("");
+      }}
+    >
+      Remove
+    </button>
   </div>
-)}
+))}
 
 {aiUploadProgress && (
   <div
