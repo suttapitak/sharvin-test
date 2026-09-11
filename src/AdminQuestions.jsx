@@ -100,18 +100,14 @@ function readFileAsDataURL(file) {
 }
 
 async function handleAiSourceFiles(event) {
-  const files = Array.from(event.target.files || []);
+  const selectedFiles = Array.from(event.target.files || []);
 
-  if (!files.length) return;
+  if (!selectedFiles.length) return;
 
   if (!aiPasswordVerified) {
-    setAiError("Please verify the Admin Password before selecting files.");
-    event.target.value = "";
-    return;
-  }
-
-  if (files.length > 10) {
-    setAiError("You can upload a maximum of 10 files at one time.");
+    setAiError(
+      "Please verify the Admin Password before selecting files."
+    );
     event.target.value = "";
     return;
   }
@@ -122,7 +118,9 @@ async function handleAiSourceFiles(event) {
     "image/png",
   ];
 
-  for (const file of files) {
+  const maxFileSize = 2.5 * 1024 * 1024;
+
+  for (const file of selectedFiles) {
     if (!allowedTypes.includes(file.type)) {
       setAiError(
         `${file.name}: Only PDF, JPG, JPEG and PNG files are allowed.`
@@ -130,8 +128,6 @@ async function handleAiSourceFiles(event) {
       event.target.value = "";
       return;
     }
-
-    const maxFileSize = 2.5 * 1024 * 1024;
 
     if (file.size > maxFileSize) {
       setAiError(
@@ -142,20 +138,54 @@ async function handleAiSourceFiles(event) {
     }
   }
 
+  // Ignore files that have already been added.
+  const existingFileKeys = new Set(
+    aiSourceFiles.map(
+      (file) =>
+        `${file.name}-${file.size}-${file.lastModified}`
+    )
+  );
+
+  const newFiles = selectedFiles.filter(
+    (file) =>
+      !existingFileKeys.has(
+        `${file.name}-${file.size}-${file.lastModified}`
+      )
+  );
+
+  if (newFiles.length === 0) {
+    setAiError("");
+    setAiUploadProgress(
+      "All selected files are already added."
+    );
+    event.target.value = "";
+    return;
+  }
+
+  // Maximum 10 source files in total.
+  if (aiSourceFiles.length + newFiles.length > 10) {
+    setAiError(
+      `You can upload a maximum of 10 source files in total. You already have ${aiSourceFiles.length} file(s) added.`
+    );
+    event.target.value = "";
+    return;
+  }
+
   setAiError("");
-  setAiSourceFiles(files);
-  setAiUploadedSources([]);
   setAiUploadingFiles(true);
-  setAiUploadProgress(`Uploading 0 of ${files.length} files...`);
+
+  setAiUploadProgress(
+    `Uploading 0 of ${newFiles.length} new file(s)...`
+  );
+
+  const uploadedFiles = [];
 
   try {
-    const uploaded = [];
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let i = 0; i < newFiles.length; i++) {
+      const file = newFiles[i];
 
       setAiUploadProgress(
-        `⏳ Uploading ${i + 1} of ${files.length}: ${file.name}`
+        `⏳ Uploading ${i + 1} of ${newFiles.length}: ${file.name}`
       );
 
       const fileData = await readFileAsDataURL(file);
@@ -181,21 +211,43 @@ async function handleAiSourceFiles(event) {
         );
       }
 
-      uploaded.push(data.file);
-      setAiUploadedSources([...uploaded]);
+      uploadedFiles.push(file);
+
+      // Keep all previously selected files and append this one.
+      setAiSourceFiles((current) => [
+        ...current,
+        file,
+      ]);
+
+      // Keep all previously uploaded OpenAI file IDs and append this one.
+      setAiUploadedSources((current) => [
+        ...current,
+        data.file,
+      ]);
     }
 
     setAiUploadProgress(
-      `✅ ${uploaded.length} source files uploaded and ready.`
+      `✅ ${
+        aiSourceFiles.length + uploadedFiles.length
+      } source files uploaded and ready.`
     );
   } catch (error) {
-    setAiUploadedSources([]);
     setAiError(
       error?.message || "Unable to upload source files."
     );
-    setAiUploadProgress("");
+
+    if (uploadedFiles.length > 0) {
+      setAiUploadProgress(
+        `⚠️ ${uploadedFiles.length} new file(s) uploaded before the error. Previously uploaded files have been retained.`
+      );
+    } else {
+      setAiUploadProgress("");
+    }
   } finally {
     setAiUploadingFiles(false);
+
+    // Allows the file picker to be used again immediately.
+    event.target.value = "";
   }
 }
 const [aiQuestions, setAiQuestions] = useState([]);
