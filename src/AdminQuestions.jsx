@@ -821,7 +821,8 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
         : "#1e3a8a",
     }}
   >
-    {aiUploadProgress}
+   {aiUploadingFiles ? "⏳ " : ""}
+{aiUploadProgress}
   </div>
 )}
   <div style={{ height: "18px" }} />
