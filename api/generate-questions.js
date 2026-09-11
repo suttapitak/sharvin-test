@@ -114,13 +114,22 @@ if (Array.isArray(sourceFiles) && sourceFiles.length > 0) {
   for (const sourceFile of sourceFiles) {
     if (!sourceFile?.id) continue;
 
-    inputContent.push({
-      type: "input_file",
-      file_id: sourceFile.id,
-    });
+    if (
+      sourceFile.type === "image/jpeg" ||
+      sourceFile.type === "image/png"
+    ) {
+      inputContent.push({
+        type: "input_image",
+        file_id: sourceFile.id,
+      });
+    } else {
+      inputContent.push({
+        type: "input_file",
+        file_id: sourceFile.id,
+      });
+    }
   }
 }
-
 const openAIInput = [
   {
     role: "user",
