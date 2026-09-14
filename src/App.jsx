@@ -4,17 +4,6 @@ import AdminQuestions from "./AdminQuestions.jsx";
 const API = "https://script.google.com/macros/s/AKfycbwwxw-TEHqb5yuv2B1nGGpgg0SIsQQ8hOCzOUY81I12txi3PmM9tLsJ1GLR9O-aeAwe/exec";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const SUBJECT_OPTIONS = [
-  "Maths",
-  "Science",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "English",
-  "SST",
-  "Marathi",
-  "Hindi",
-];
 
 export default function App() {
     if (window.location.pathname === "/admin") {
@@ -24,11 +13,12 @@ export default function App() {
   const [school, setSchool] = useState("");
   const [parentPhone, setParentPhone] = useState("");
   const [selectedClass, setSelectedClass] = useState("1");
-  const [selectedSubject, setSelectedSubject] = useState("Maths");
+  const [selectedBoard, setSelectedBoard] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedChapter, setSelectedChapter] = useState("All Chapters");
   const [selectedConcept, setSelectedConcept] = useState("All Concepts");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All Levels");
-
+const [subjectOptions, setSubjectOptions] = useState([]);
   const [chapterOptions, setChapterOptions] = useState(["All Chapters"]);
   const [conceptOptions, setConceptOptions] = useState(["All Concepts"]);
   const [difficultyOptions, setDifficultyOptions] = useState(["All Levels"]);
@@ -55,6 +45,7 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
     school: "",
     parentPhone: "",
     selectedClass: "",
+    selectedBoard: "",
     selectedSubject: "",
   });
 
@@ -66,7 +57,7 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
     async function loadFilters() {
       try {
         const response = await fetch(
-  `${SUPABASE_URL}/rest/v1/rpc/get_filter_options`,
+  `${SUPABASE_URL}/rest/v1/rpc/get_filter_options_v3`,
   {
     method: "POST",
     headers: {
@@ -75,8 +66,9 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
       Authorization: `Bearer ${SUPABASE_KEY}`,
     },
     body: JSON.stringify({
-      p_class: Number(selectedClass),
-      p_subject: selectedSubject,
+     p_class: Number(selectedClass),
+p_board: selectedBoard,
+p_subject: selectedSubject,
       p_chapter: selectedChapter,
     }),
   }
@@ -87,11 +79,15 @@ if (!response.ok) {
 }
 
 const data = await response.json();
-
+const subjects = data.subjects || [];
         const chapters = ["All Chapters", ...(data.chapters || [])];
         const concepts = ["All Concepts", ...(data.concepts || [])];
         const difficulties = ["All Levels", ...(data.difficulties || [])];
+setSubjectOptions(subjects);
 
+if (!subjects.includes(selectedSubject)) {
+  setSelectedSubject("");
+}
         setChapterOptions(chapters);
         setConceptOptions(concepts);
         setDifficultyOptions(difficulties);
@@ -110,10 +106,15 @@ const data = await response.json();
       }
     }
 
-    if (selectedClass && selectedSubject) {
-      loadFilters();
-    }
-  }, [selectedClass, selectedSubject, selectedChapter]);
+  if (selectedClass && selectedBoard) {
+  loadFilters();
+}
+ }, [
+  selectedClass,
+  selectedBoard,
+  selectedSubject,
+  selectedChapter,
+]);
 
   function validateForm() {
     const newErrors = {
@@ -121,6 +122,7 @@ const data = await response.json();
       school: "",
       parentPhone: "",
       selectedClass: "",
+      selectedBoard: "",
       selectedSubject: "",
     };
 
@@ -148,7 +150,10 @@ const data = await response.json();
       newErrors.selectedClass = "Please select class.";
       isValid = false;
     }
-
+if (!selectedBoard.trim()) {
+  newErrors.selectedBoard = "Please select board.";
+  isValid = false;
+}
     if (!selectedSubject.trim()) {
       newErrors.selectedSubject = "Please select subject.";
       isValid = false;
@@ -165,6 +170,8 @@ const data = await response.json();
         alert(newErrors.parentPhone);
       } else if (newErrors.selectedClass) {
         alert(newErrors.selectedClass);
+        } else if (newErrors.selectedBoard) {
+  alert(newErrors.selectedBoard);
       } else if (newErrors.selectedSubject) {
         alert(newErrors.selectedSubject);
       }
@@ -445,7 +452,7 @@ try {
 
     try {
      const response = await fetch(
-  `${SUPABASE_URL}/rest/v1/rpc/get_practice_questions`,
+  `${SUPABASE_URL}/rest/v1/rpc/get_practice_questions_v2`,
   {
     method: "POST",
     headers: {
@@ -455,6 +462,7 @@ try {
     },
     body: JSON.stringify({
       p_class: Number(selectedClass),
+      p_board: selectedBoard,
       p_subject: selectedSubject,
       p_chapter: selectedChapter,
       p_concept: selectedConcept,
@@ -636,7 +644,8 @@ if (crossedTier) {
     setSchool("");
     setParentPhone("");
     setSelectedClass("1");
-    setSelectedSubject("Maths");
+setSelectedBoard("");
+setSelectedSubject("");
     setSelectedChapter("All Chapters");
     setSelectedConcept("All Concepts");
     setSelectedDifficulty("All Levels");
@@ -652,6 +661,7 @@ if (crossedTier) {
       school: "",
       parentPhone: "",
       selectedClass: "",
+      selectedBoard: "",
       selectedSubject: "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -932,7 +942,37 @@ if (crossedTier) {
               </select>
               {errors.selectedClass && <div style={styles.error}>{errors.selectedClass}</div>}
             </div>
+<div style={{ marginBottom: "20px" }}>
+  <label style={styles.label}>
+    Select Board <span style={{ color: "red" }}>*</span>
+  </label>
 
+  <select
+    value={selectedBoard}
+    onChange={(e) => {
+      setSelectedBoard(e.target.value);
+      setSelectedSubject("");
+      setSelectedChapter("All Chapters");
+      setSelectedConcept("All Concepts");
+      setSelectedDifficulty("All Levels");
+      setErrors((prev) => ({
+        ...prev,
+        selectedBoard: "",
+      }));
+    }}
+    style={styles.select}
+  >
+    <option value="">Select Board</option>
+    <option value="CBSE">CBSE / NCERT</option>
+    <option value="ICSE">ICSE</option>
+  </select>
+
+  {errors.selectedBoard && (
+    <div style={styles.error}>
+      {errors.selectedBoard}
+    </div>
+  )}
+</div>
             <div style={{ marginBottom: "20px" }}>
               <label style={styles.label}>
                 Select Subject <span style={{ color: "red" }}>*</span>
@@ -948,11 +988,13 @@ if (crossedTier) {
                 }}
                 style={styles.select}
               >
-                {SUBJECT_OPTIONS.map((subject) => (
-                  <option key={subject} value={subject}>
-                    {subject}
-                  </option>
-                ))}
+                <option value="">Select Subject</option>
+
+{subjectOptions.map((subject) => (
+  <option key={subject} value={subject}>
+    {subject}
+  </option>
+))}
               </select>
               {errors.selectedSubject && <div style={styles.error}>{errors.selectedSubject}</div>}
             </div>
@@ -1320,11 +1362,16 @@ if (crossedTier) {
                   Chapter: {q.chapter || "-"} | Concept: {q.concept || "-"} | Difficulty: {q.difficulty || "-"} | Marks: {q.marks || 1}
                 </div>
 
-                {[q.A, q.B, q.C, q.D].map((opt) => {
+               {[
+  { key: "A", text: q.A },
+  { key: "B", text: q.B },
+  { key: "C", text: q.C },
+  { key: "D", text: q.D },
+].map((opt) => {
                   const selectedAnswer = answers[q.ID];
                   const attemptedThisQuestion = selectedAnswer !== undefined && selectedAnswer !== "";
-                  const isSelectedOption = String(selectedAnswer) === String(opt);
-                  const isCorrectOption = String(q.correct) === String(opt);
+                  const isSelectedOption = String(selectedAnswer) === String(opt.key);
+const isCorrectOption = String(q.correct) === String(opt.key);
 
                   const showGreen =
                     submitted &&
@@ -1349,8 +1396,7 @@ if (crossedTier) {
                   }
 
                   return (
-                    <div
-                      key={opt}
+                    <div key={opt.key}
                       style={{
                         marginBottom: "8px",
                         fontFamily: "Arial, sans-serif",
@@ -1364,12 +1410,12 @@ if (crossedTier) {
                         <input
                           type="radio"
                           name={`question-${q.ID}`}
-value={opt}
-checked={answers[q.ID] === opt}
-onChange={() => selectAnswer(q.ID, opt)}
+value={opt.key}
+checked={answers[q.ID] === opt.key}
+onChange={() => selectAnswer(q.ID, opt.key)}
                           disabled={submitted}
                         />
-                        {" "}{opt}
+                     {" "}{opt.key}. {opt.text}
 
                         {submitted && attemptedThisQuestion && showGreen && (
                           <span style={{ color: "#2e7d32", fontWeight: "700", marginLeft: "10px" }}>
