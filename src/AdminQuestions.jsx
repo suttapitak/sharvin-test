@@ -266,6 +266,71 @@ const [aiError, setAiError] = useState("");
   const [csvPasswordVerified, setCsvPasswordVerified] = useState(false);
   const [csvPasswordChecking, setCsvPasswordChecking] = useState(false);
   const [csvPasswordMessage, setCsvPasswordMessage] = useState("");
+  // Question deletion controls
+const [deleteClass, setDeleteClass] = useState("");
+const [deleteSubject, setDeleteSubject] = useState("");
+const [deleteChapter, setDeleteChapter] = useState("");
+const [deleteQuestions, setDeleteQuestions] = useState([]);
+const [selectedDeleteIds, setSelectedDeleteIds] = useState([]);
+const [deleteLoading, setDeleteLoading] = useState(false);
+const [deleteMessage, setDeleteMessage] = useState("");
+  async function loadQuestionsForDelete() {
+  setDeleteMessage("");
+  setDeleteQuestions([]);
+  setSelectedDeleteIds([]);
+
+  if (!csvPasswordVerified) {
+    setDeleteMessage("❌ Please verify the Admin Password first.");
+    return;
+  }
+
+  if (!deleteClass || !deleteSubject.trim() || !deleteChapter.trim()) {
+    setDeleteMessage(
+      "❌ Please enter Class, Subject and Chapter."
+    );
+    return;
+  }
+
+  try {
+    setDeleteLoading(true);
+
+    const params = new URLSearchParams({
+      class: deleteClass,
+      subject: deleteSubject.trim(),
+      chapter: deleteChapter.trim(),
+    });
+
+    const response = await fetch(
+      `/api/search-questions?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "x-admin-secret": csvAdminPassword.trim(),
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error || "Unable to load questions."
+      );
+    }
+
+    setDeleteQuestions(data.questions || []);
+
+    setDeleteMessage(
+      `✅ ${(data.questions || []).length} question(s) found.`
+    );
+  } catch (error) {
+    setDeleteMessage(
+      `❌ ${error?.message || "Unable to load questions."}`
+    );
+  } finally {
+    setDeleteLoading(false);
+  }
+}
   async function verifyAdminPassword(type) {
   const isAI = type === "ai";
 
