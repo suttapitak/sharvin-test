@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     );
     params.set("Class", `eq.${classNumber}`);
     params.set("Subject", `eq.${subject}`);
-    params.set("Chapter", `eq.${chapter}`);
+   params.set("Chapter", `ilike.*${chapter}*`);
     params.set("order", "Q.asc");
 
     const response = await fetch(
