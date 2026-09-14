@@ -42,10 +42,10 @@ export default async function handler(req, res) {
       });
     }
 
-    if (questions.length > 500) {
+    if (questions.length > 2000) {
       return res.status(400).json({
         success: false,
-        error: "Maximum 500 questions per import",
+        error: "Maximum 2000 questions per import",
       });
     }
 
