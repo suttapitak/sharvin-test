@@ -738,6 +738,67 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
     setAiSavingQuestions(false);
   }
 }
+async function handleDeleteSelectedQuestions() {
+  setDeleteMessage("");
+
+  if (!csvPasswordVerified) {
+    setDeleteMessage("❌ Please verify the Admin Password first.");
+    return;
+  }
+
+  if (selectedDeleteIds.length === 0) {
+    setDeleteMessage("❌ Select at least one question to delete.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `PERMANENTLY delete ${selectedDeleteIds.length} selected question(s) from the live question bank?\n\nThis action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setDeleteLoading(true);
+
+    const response = await fetch("/api/delete-questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-secret": csvAdminPassword.trim(),
+      },
+      body: JSON.stringify({
+        ids: selectedDeleteIds,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error || "Unable to delete questions."
+      );
+    }
+
+    setDeleteQuestions((current) =>
+      current.filter(
+        (question) =>
+          !selectedDeleteIds.includes(question.ID)
+      )
+    );
+
+    setSelectedDeleteIds([]);
+
+    setDeleteMessage(
+      `✅ ${data.deleted} question(s) permanently deleted.`
+    );
+  } catch (error) {
+    setDeleteMessage(
+      `❌ ${error?.message || "Unable to delete questions."}`
+    );
+  } finally {
+    setDeleteLoading(false);
+  }
+}  
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -1138,6 +1199,196 @@ if (!aiSourceText.trim() && aiUploadedSources.length === 0) {
     ))}
   </div>
 )}
+</div>
+
+<div style={{ height: "24px" }} />
+        <div style={styles.card}>
+  <h2 style={styles.cardTitle}>
+    Delete Questions from Live Question Bank
+  </h2>
+
+  <div
+    style={{
+      background: "#fff7ed",
+      border: "1px solid #fdba74",
+      padding: "12px",
+      borderRadius: "8px",
+      marginBottom: "18px",
+      color: "#9a3412",
+      fontWeight: "600",
+    }}
+  >
+    Search by Class, Subject and Chapter. Review the matching questions,
+    select only the required rows, then delete them permanently.
+  </div>
+
+  <label style={styles.label}>Class</label>
+  <input
+    type="number"
+    min="1"
+    max="12"
+    value={deleteClass}
+    onChange={(e) => setDeleteClass(e.target.value)}
+    style={styles.input}
+  />
+
+  <div style={{ height: "12px" }} />
+
+  <label style={styles.label}>Subject</label>
+  <input
+    type="text"
+    value={deleteSubject}
+    onChange={(e) => setDeleteSubject(e.target.value)}
+    placeholder="Example: Biology"
+    style={styles.input}
+  />
+
+  <div style={{ height: "12px" }} />
+
+  <label style={styles.label}>Chapter</label>
+  <input
+    type="text"
+    value={deleteChapter}
+    onChange={(e) => setDeleteChapter(e.target.value)}
+    placeholder="Enter exact chapter name"
+    style={styles.input}
+  />
+
+  <div style={{ height: "16px" }} />
+
+  <button
+    type="button"
+    onClick={loadQuestionsForDelete}
+    disabled={deleteLoading}
+    style={styles.button}
+  >
+    {deleteLoading ? "⏳ Searching..." : "Search Questions"}
+  </button>
+
+  {deleteMessage && (
+    <div
+      style={{
+        marginTop: "14px",
+        fontWeight: "600",
+      }}
+    >
+      {deleteMessage}
+    </div>
+  )}
+
+  {deleteQuestions.length > 0 && (
+    <div style={{ marginTop: "22px" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+          flexWrap: "wrap",
+          marginBottom: "14px",
+        }}
+      >
+        <strong>
+          Found: {deleteQuestions.length} question(s)
+        </strong>
+
+        <strong>
+          Selected: {selectedDeleteIds.length}
+        </strong>
+
+        <button
+          type="button"
+          onClick={() =>
+            setSelectedDeleteIds(
+              deleteQuestions.map((q) => q.ID)
+            )
+          }
+        >
+          Select All
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSelectedDeleteIds([])}
+        >
+          Deselect All
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDeleteSelectedQuestions}
+          disabled={
+            deleteLoading ||
+            selectedDeleteIds.length === 0
+          }
+          style={{
+            background: "#b91c1c",
+            color: "white",
+            border: "none",
+            padding: "10px 14px",
+            borderRadius: "8px",
+            fontWeight: "700",
+            cursor:
+              selectedDeleteIds.length === 0
+                ? "not-allowed"
+                : "pointer",
+          }}
+        >
+          {deleteLoading
+            ? "Deleting..."
+            : `Delete Selected (${selectedDeleteIds.length})`}
+        </button>
+      </div>
+
+      <div style={styles.tableWrapper}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Select</th>
+              <th style={styles.th}>ID</th>
+              <th style={styles.th}>Class</th>
+              <th style={styles.th}>Subject</th>
+              <th style={styles.th}>Chapter</th>
+              <th style={styles.th}>Q</th>
+              <th style={styles.th}>Question</th>
+              <th style={styles.th}>Difficulty</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {deleteQuestions.map((q) => (
+              <tr key={q.ID}>
+                <td style={styles.td}>
+                  <input
+                    type="checkbox"
+                    checked={selectedDeleteIds.includes(q.ID)}
+                    onChange={() => {
+                      setSelectedDeleteIds((current) =>
+                        current.includes(q.ID)
+                          ? current.filter((id) => id !== q.ID)
+                          : [...current, q.ID]
+                      );
+                    }}
+                  />
+                </td>
+
+                <td style={styles.td}>{q.ID}</td>
+                <td style={styles.td}>{q.Class}</td>
+                <td style={styles.td}>{q.Subject}</td>
+                <td style={styles.td}>{q.Chapter}</td>
+                <td style={styles.td}>{q.Q}</td>
+                <td style={styles.questionCell}>
+                  {q.Question}
+                </td>
+                <td style={styles.td}>
+                  {q.Difficulty}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )}
 </div>
 
 <div style={{ height: "24px" }} />
