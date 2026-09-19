@@ -1,3 +1,70 @@
+function normalizeBoard(value) {
+  const raw = String(value ?? "").trim();
+  const v = raw.toUpperCase().replace(/\s+/g, " ");
+
+  if (
+    [
+      "CBSE",
+      "NCERT",
+      "CBSE/NCERT",
+      "CBSE / NCERT",
+      "CBSE-NCERT",
+    ].includes(v)
+  ) {
+    return "CBSE / NCERT";
+  }
+
+  if (v === "ICSE") return "ICSE";
+  if (v === "IGCSE") return "IGCSE";
+  if (v === "SSC") return "SSC";
+  if (v === "IB") return "IB";
+
+  return null;
+}
+
+function normalizeSubject(value) {
+  const raw = String(value ?? "").trim();
+  const v = raw.toLowerCase().replace(/\s+/g, " ");
+
+  const subjectMap = {
+    math: "Mathematics",
+    maths: "Mathematics",
+    mathematics: "Mathematics",
+
+    science: "Science",
+    physics: "Physics",
+    chemistry: "Chemistry",
+    biology: "Biology",
+
+    english: "English",
+    hindi: "Hindi",
+    marathi: "Marathi",
+    sst: "SST",
+    "social science": "SST",
+    economics: "Economics",
+  };
+
+  return subjectMap[v] || null;
+}
+
+function normalizeDifficulty(value) {
+  const raw = String(value ?? "").trim();
+  const v = raw.toLowerCase();
+
+  if (v === "easy") return "Easy";
+  if (v === "medium") return "Medium";
+
+  if (
+    v === "difficult" ||
+    v === "difficulty" ||
+    v === "hard"
+  ) {
+    return "Difficult";
+  }
+
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -70,8 +137,11 @@ export default async function handler(req, res) {
     const validAnswers = ["A", "B", "C", "D"];
     const seenIds = new Set();
 
+    const rows = [];
+
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
+      const rowNumber = i + 1;
 
       for (const field of requiredFields) {
         if (
@@ -81,7 +151,7 @@ export default async function handler(req, res) {
         ) {
           return res.status(400).json({
             success: false,
-            error: `Row ${i + 1}: Missing ${field}`,
+            error: `Row ${rowNumber}: Missing ${field}`,
           });
         }
       }
@@ -97,43 +167,101 @@ export default async function handler(req, res) {
 
       seenIds.add(id);
 
+      const correct = String(q.Correct).trim().toUpperCase();
+
+      if (!validAnswers.includes(correct)) {
+        return res.status(400).json({
+          success: false,
+          error: `Row ${rowNumber}: Correct must be A, B, C, or D`,
+        });
+      }
+
+      const classNumber = Number(q.Class);
+
       if (
-        !validAnswers.includes(
-          String(q.Correct).trim().toUpperCase()
-        )
+        !Number.isInteger(classNumber) ||
+        classNumber < 1 ||
+        classNumber > 12
       ) {
         return res.status(400).json({
           success: false,
-          error: `Row ${i + 1}: Correct must be A, B, C, or D`,
+          error: `Row ${rowNumber}: Class must be an integer from 1 to 12`,
         });
       }
-    }
 
-    const rows = questions.map((q) => ({
-      ID: String(q.ID).trim(),
-      Class: Number(q.Class),
-      Subject: String(q.Subject).trim(),
-      Chapter: String(q.Chapter).trim(),
-      Concept: String(q.Concept).trim(),
-      Q: Number(q.Q),
-      Question: String(q.Question).trim(),
-      A: String(q.A).trim(),
-      B: String(q.B).trim(),
-      C: String(q.C).trim(),
-      D: String(q.D).trim(),
-      Correct: String(q.Correct).trim().toUpperCase(),
-      Marks: Number(q.Marks),
-      Difficulty: String(q.Difficulty).trim(),
-      Board: String(q.Board).trim(),
-      Explaination:
-        q.Explaination == null
-          ? ""
-          : String(q.Explaination).trim(),
-      Source:
-        q.Source == null
-          ? ""
-          : String(q.Source).trim(),
-    }));
+      const questionNumber = Number(q.Q);
+
+      if (!Number.isFinite(questionNumber) || questionNumber < 1) {
+        return res.status(400).json({
+          success: false,
+          error: `Row ${rowNumber}: Invalid Q value`,
+        });
+      }
+
+      const marks = Number(q.Marks);
+
+      if (!Number.isFinite(marks) || marks <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Row ${rowNumber}: Invalid Marks value`,
+        });
+      }
+
+      const board = normalizeBoard(q.Board);
+
+      if (!board) {
+        return res.status(400).json({
+          success: false,
+          error: `Row ${rowNumber}: Invalid Board "${q.Board}". Allowed values: CBSE / NCERT, ICSE, IGCSE, SSC, IB`,
+        });
+      }
+
+      const subject = normalizeSubject(q.Subject);
+
+      if (!subject) {
+        return res.status(400).json({
+          success: false,
+          error: `Row ${rowNumber}: Invalid Subject "${q.Subject}"`,
+        });
+      }
+
+      const difficulty = normalizeDifficulty(q.Difficulty);
+
+      if (!difficulty) {
+        return res.status(400).json({
+          success: false,
+          error: `Row ${rowNumber}: Invalid Difficulty "${q.Difficulty}". Use Easy, Medium, or Difficult`,
+        });
+      }
+
+      rows.push({
+        ID: id,
+        Class: classNumber,
+        Subject: subject,
+        Chapter: String(q.Chapter).trim(),
+        Concept: String(q.Concept).trim(),
+        Q: questionNumber,
+        Question: String(q.Question).trim(),
+        A: String(q.A).trim(),
+        B: String(q.B).trim(),
+        C: String(q.C).trim(),
+        D: String(q.D).trim(),
+        Correct: correct,
+        Marks: marks,
+        Difficulty: difficulty,
+        Board: board,
+
+        Explaination:
+          q.Explaination == null
+            ? ""
+            : String(q.Explaination).trim(),
+
+        Source:
+          q.Source == null
+            ? ""
+            : String(q.Source).trim(),
+      });
+    }
 
     const response = await fetch(
       `${SUPABASE_URL}/rest/v1/questions`,
