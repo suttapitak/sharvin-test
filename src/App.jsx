@@ -963,7 +963,7 @@ setSelectedSubject("");
     style={styles.select}
   >
     <option value="">Select Board</option>
-    <option value="CBSE">CBSE / NCERT</option>
+    <option value="CBSE / NCERT">CBSE / NCERT</option>
     <option value="ICSE">ICSE</option>
   </select>
 
