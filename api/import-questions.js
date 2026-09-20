@@ -42,6 +42,7 @@ function normalizeSubject(value) {
     sst: "SST",
     "social science": "SST",
     economics: "Economics",
+    "the world around us": "The World Around Us",
   };
 
   return subjectMap[v] || null;
