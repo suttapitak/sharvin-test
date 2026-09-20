@@ -156,7 +156,18 @@ export default async function handler(req, res) {
           });
         }
       }
+// Prevent chapter numbers such as 1, 2, 3 from entering Supabase.
+// Chapter must contain the actual chapter name.
+const chapter = String(q.Chapter).trim();
 
+if (/^\d+$/.test(chapter)) {
+  return res.status(400).json({
+    success: false,
+    error:
+      `Row ${rowNumber}: Invalid Chapter "${chapter}". ` +
+      `Please enter the full chapter name instead of only the chapter number.`,
+  });
+}
       const id = String(q.ID).trim();
 
       if (seenIds.has(id)) {
@@ -239,7 +250,7 @@ export default async function handler(req, res) {
         ID: id,
         Class: classNumber,
         Subject: subject,
-        Chapter: String(q.Chapter).trim(),
+        Chapter: chapter,
         Concept: String(q.Concept).trim(),
         Q: questionNumber,
         Question: String(q.Question).trim(),
