@@ -438,13 +438,18 @@ const [deleteMessage, setDeleteMessage] = useState("");
         );
       }
 
-      const classNumber = Number(q.Class);
+     const classValue = String(q.Class || "").trim();
+const classNumber = Number(classValue);
 
-      if (!Number.isInteger(classNumber) || classNumber < 1 || classNumber > 12) {
-        validationErrors.push(
-          `Row ${rowNumber}: Class must be between 1 and 12.`
-        );
-      }
+const isSeniorKG = classValue.toLowerCase() === "senior kg";
+const isValidNumericClass =
+  Number.isInteger(classNumber) && classNumber >= 1 && classNumber <= 12;
+
+if (!isSeniorKG && !isValidNumericClass) {
+  validationErrors.push(
+    `Row ${rowNumber}: Class must be Senior KG or between 1 and 12.`
+  );
+}
 
       const marks = Number(q.Marks);
 

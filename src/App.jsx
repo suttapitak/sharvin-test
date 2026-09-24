@@ -66,7 +66,7 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
       Authorization: `Bearer ${SUPABASE_KEY}`,
     },
     body: JSON.stringify({
-     p_class: Number(selectedClass),
+    p_class: String(selectedClass),
 p_board: selectedBoard,
 p_subject: selectedSubject,
       p_chapter: selectedChapter,
@@ -461,7 +461,7 @@ try {
       Authorization: `Bearer ${SUPABASE_KEY}`,
     },
     body: JSON.stringify({
-      p_class: Number(selectedClass),
+     p_class: String(selectedClass),
       p_board: selectedBoard,
       p_subject: selectedSubject,
       p_chapter: selectedChapter,
@@ -934,6 +934,7 @@ setSelectedSubject("");
                 }}
                 style={styles.select}
               >
+               <option value="Senior KG">Senior KG</option>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((cls) => (
                   <option key={cls} value={String(cls)}>
                     Class {cls}
