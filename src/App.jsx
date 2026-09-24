@@ -675,10 +675,7 @@ if (crossedTier) {
   }, [started, submitted, timeLeft]);
 
   function resetTest() {
-    setStudentName("");
-    setSchool("");
-    setParentPhone("");
-    setSelectedClass("1");
+    
 setSelectedBoard("");
 setSelectedSubject("");
     setSelectedChapter("All Chapters");
