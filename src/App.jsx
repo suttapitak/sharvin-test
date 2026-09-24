@@ -52,7 +52,37 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
   useEffect(() => {
     document.title = "Sharvin Academy Test Portal";
   }, []);
+// Remember student details on this device
+useEffect(() => {
+  const savedStudent = localStorage.getItem("sharvin_student_details");
 
+  if (savedStudent) {
+    try {
+      const details = JSON.parse(savedStudent);
+
+      setStudentName(details.studentName || "");
+      setSchool(details.school || "");
+      setParentPhone(details.parentPhone || "");
+      setSelectedClass(details.selectedClass || "");
+    } catch (error) {
+      console.error("Could not restore student details:", error);
+    }
+  }
+}, []);
+
+useEffect(() => {
+  const details = {
+    studentName,
+    school,
+    parentPhone,
+    selectedClass,
+  };
+
+  localStorage.setItem(
+    "sharvin_student_details",
+    JSON.stringify(details)
+  );
+}, [studentName, school, parentPhone, selectedClass]);
   useEffect(() => {
     async function loadFilters() {
       try {
@@ -1321,19 +1351,35 @@ setSelectedSubject("");
         {started && (
           <div>
             <div
-              style={{
-                background: "#ffe9e9",
-                color: "#8b0000",
-                padding: "12px 18px",
-                borderRadius: "10px",
-                fontWeight: "bold",
-                fontSize: "18px",
-                marginBottom: "20px",
-                textAlign: "center"
-              }}
-            >
-              Time Left: {formatTime(timeLeft)}
-            </div>
+  style={{
+    position: "sticky",
+    top: "10px",
+    zIndex: 1000,
+    background: "#ffe9e9",
+    color: "#8b0000",
+    padding: "12px 18px",
+    borderRadius: "10px",
+    fontWeight: "bold",
+    fontSize: "18px",
+    marginBottom: "20px",
+    textAlign: "center",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+  }}
+>
+  {!submitted ? (
+    <>⏱️ Time Left: {formatTime(timeLeft)}</>
+  ) : (
+    <button
+      onClick={resetTest}
+      style={{
+        ...styles.buttonPrimary,
+        margin: 0,
+      }}
+    >
+      Start New Test
+    </button>
+  )}
+</div>
 
             <div style={styles.metaBox}>
               <strong>Student:</strong> {studentName}
