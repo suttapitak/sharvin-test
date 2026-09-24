@@ -9,10 +9,33 @@ export default function App() {
     if (window.location.pathname === "/admin") {
     return <AdminQuestions />;
   }
-  const [studentName, setStudentName] = useState("");
-  const [school, setSchool] = useState("");
-  const [parentPhone, setParentPhone] = useState("");
-  const [selectedClass, setSelectedClass] = useState("1");
+  const getSavedStudentDetails = () => {
+  try {
+    return JSON.parse(
+      localStorage.getItem("sharvin_student_details") || "{}"
+    );
+  } catch {
+    return {};
+  }
+};
+
+const savedStudentDetails = getSavedStudentDetails();
+
+const [studentName, setStudentName] = useState(
+  savedStudentDetails.studentName || ""
+);
+
+const [school, setSchool] = useState(
+  savedStudentDetails.school || ""
+);
+
+const [parentPhone, setParentPhone] = useState(
+  savedStudentDetails.parentPhone || ""
+);
+
+const [selectedClass, setSelectedClass] = useState(
+  savedStudentDetails.selectedClass || "1"
+);
   const [selectedBoard, setSelectedBoard] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedChapter, setSelectedChapter] = useState("All Chapters");
@@ -48,41 +71,22 @@ const [dashboardLoading, setDashboardLoading] = useState(false);
     selectedBoard: "",
     selectedSubject: "",
   });
-
+useEffect(() => {
+  localStorage.setItem(
+    "sharvin_student_details",
+    JSON.stringify({
+      studentName,
+      school,
+      parentPhone,
+      selectedClass,
+    })
+  );
+}, [studentName, school, parentPhone, selectedClass]);
   useEffect(() => {
     document.title = "Sharvin Academy Test Portal";
   }, []);
-// Remember student details on this device
-useEffect(() => {
-  const savedStudent = localStorage.getItem("sharvin_student_details");
 
-  if (savedStudent) {
-    try {
-      const details = JSON.parse(savedStudent);
 
-      setStudentName(details.studentName || "");
-      setSchool(details.school || "");
-      setParentPhone(details.parentPhone || "");
-      setSelectedClass(details.selectedClass || "");
-    } catch (error) {
-      console.error("Could not restore student details:", error);
-    }
-  }
-}, []);
-
-useEffect(() => {
-  const details = {
-    studentName,
-    school,
-    parentPhone,
-    selectedClass,
-  };
-
-  localStorage.setItem(
-    "sharvin_student_details",
-    JSON.stringify(details)
-  );
-}, [studentName, school, parentPhone, selectedClass]);
   useEffect(() => {
     async function loadFilters() {
       try {
@@ -168,13 +172,14 @@ if (!subjects.includes(selectedSubject)) {
       isValid = false;
     }
 
-    if (!parentPhone.trim()) {
-      newErrors.parentPhone = "Please enter parent mobile number.";
-      isValid = false;
-    } else if (!/^[0-9]{10}$/.test(parentPhone.trim())) {
-      newErrors.parentPhone = "Please enter a valid 10-digit mobile number.";
-      isValid = false;
-    }
+  if (!parentPhone.trim()) {
+  newErrors.parentPhone = "Please enter parent mobile number.";
+  isValid = false;
+} else if (!/^[6-9][0-9]{9}$/.test(parentPhone.trim())) {
+  newErrors.parentPhone =
+    "Please enter a valid 10-digit Indian mobile number.";
+  isValid = false;
+}
 
     if (!selectedClass.trim()) {
       newErrors.selectedClass = "Please select class.";
@@ -939,7 +944,8 @@ setSelectedSubject("");
                 Parent Mobile Number <span style={{ color: "red" }}>*</span>
               </label>
               <input
-                type="text"
+                type="tel"
+inputMode="numeric"
                 value={parentPhone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, "");
